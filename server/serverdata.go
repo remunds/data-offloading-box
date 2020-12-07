@@ -24,6 +24,10 @@ type Transfer struct {
 	transfered string //*[]time.Time
 }
 
+type Text struct {
+	Text string //if just text was transmitted, e.g. answers to questions etc. (should be changed to Answer struct, Image struct, etc.)
+}
+
 type Test_struct struct {
 	Test string
 }
