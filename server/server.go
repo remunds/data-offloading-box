@@ -42,10 +42,11 @@ func postChunk(w http.ResponseWriter, r *http.Request) {
 func getTasks(w http.ResponseWriter, r *http.Request) {
 	task := Task{"123", "Clean the box", "please go ahead and clean the box from dirt."}
 	task2 := Task{"124", "Photo of upper-tree", "please take a picture of the upper part of the tree."}
-	task2 := Task{"125", "Reload battery", "please reload the battery."}
+	task3 := Task{"125", "Reload battery", "please reload the battery."}
 	taskArr := []Task{}
 	taskArr = append(taskArr, task)
 	taskArr = append(taskArr, task2)
+	taskArr = append(taskArr, task3)
 
 	bytes, err := json.Marshal(taskArr)
 	if err != nil {
