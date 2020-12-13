@@ -41,16 +41,16 @@ func Insert(database string, collection string, document Test_struct) (int, []by
 	return 201, []byte("201 - record created")
 }
 
-func InsertText(database string, collection string, document Text) (int, []byte) {
-	insertResult, err := Client.Database(database).Collection(collection).InsertOne(context.TODO(), document)
-	if err != nil {
-		log.Fatal(err)
-		return 500, []byte("500 - Something went wrong")
-	}
+// func InsertText(database string, collection string, document Text) (int, []byte) {
+// 	insertResult, err := Client.Database(database).Collection(collection).InsertOne(context.TODO(), document)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 		return 500, []byte("500 - Something went wrong")
+// 	}
 
-	fmt.Println("Inserted:", insertResult.InsertedID)
-	return 201, []byte("201 - record created")
-}
+// 	fmt.Println("Inserted:", insertResult.InsertedID)
+// 	return 201, []byte("201 - record created")
+// }
 
 func checkError(e error, successMessage string) {
 	if e != nil {

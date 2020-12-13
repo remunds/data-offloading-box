@@ -24,8 +24,10 @@ type Transfer struct {
 	transfered string //*[]time.Time
 }
 
-type Text struct {
-	Text string //if just text was transmitted, e.g. answers to questions etc. (should be changed to Answer struct, Image struct, etc.)
+type Task struct {
+	Id 	string `json:"_id"`
+	Title	string `json:"title"`
+	Description	string `json:"description"`
 }
 
 type Test_struct struct {

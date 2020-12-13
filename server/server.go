@@ -26,27 +26,32 @@ func postChunk(w http.ResponseWriter, r *http.Request) {
 	w.Write(statusMessage)
 }
 
-func postFile(w http.ResponseWriter, r *http.Request) {
-	var piID string = mux.Vars(r)[id]
-	var document Text //change accordingly to expected filetype
-	err := json.NewDecoder(r.Body).Decode(&document)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	statusCode, statusMessage := InsertText(piID, "file", document)
-	w.WriteHeader(statusCode)
-	w.Write(statusMessage)
-}
+// func postFile(w http.ResponseWriter, r *http.Request) {
+// 	var piID string = mux.Vars(r)[id]
+// 	var document Text //change accordingly to expected filetype
+// 	err := json.NewDecoder(r.Body).Decode(&document)
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusBadRequest)
+// 		return
+// 	}
+// 	statusCode, statusMessage := InsertText(piID, "file", document)
+// 	w.WriteHeader(statusCode)
+// 	w.Write(statusMessage)
+// }
 
-func getData(w http.ResponseWriter, r *http.Request) {
-	test := Test_struct{"Dies ist ein wunderbarer Test"}
-	bytes, err := json.Marshal(test)
+func getTasks(w http.ResponseWriter, r *http.Request) {
+	task := Task{"123", "Clean the box", "please go ahead and clean the box from dirt."}
+	task2 := Task{"124", "Photo of upper-tree", "please take a picture of the upper part of the tree."}
+	task2 := Task{"125", "Reload battery", "please reload the battery."}
+	taskArr := []Task{}
+	taskArr = append(taskArr, task)
+	taskArr = append(taskArr, task2)
+
+	bytes, err := json.Marshal(taskArr)
 	if err != nil {
 		log.Println(err)
 	}
 	w.Write(bytes)
-	w.WriteHeader(200)
 }
 
 func getAllData(w http.ResponseWriter, r *http.Request) {
@@ -60,9 +65,11 @@ func SetupServer() {
 	// Routes consist of a path and a handler function.
 	r.HandleFunc("/api/postData/{raspberryPiId}", postChunk).Methods("POST").Queries("format", "chunk").Headers("Content-Type", "application/json")
 
+
 	//those two are implemented atm
-	r.HandleFunc("/api/postData", postFile).Methods("POST").Queries("format", "file").Headers("Content-Type", "application/json")
-	r.HandleFunc("/api/getData", getData).Methods("GET").Headers("Content-Type", "application/json")
+	//r.HandleFunc("/api/postData", postFile).Methods("POST").Queries("format", "file").Headers("Content-Type", "application/json")
+	r.HandleFunc("/api/getTasks", getTasks).Methods("GET").Headers("Content-Type", "application/json")
+	// r.HandleFunc("/api/getData", getData).Methods("GET").Headers("Content-Type", "application/json")
 
 	r.HandleFunc("/api/getAllData", getAllData).Methods("GET").Headers("Content-Type", "application/json")
 	fmt.Println("HTTP Server only")
