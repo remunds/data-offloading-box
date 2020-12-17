@@ -31,5 +31,6 @@ type Task struct {
 }
 
 type Test_struct struct {
-	Test string
+	_id string
+	Name	string
 }
