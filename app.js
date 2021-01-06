@@ -25,11 +25,25 @@ const Image = require('./schemas').image;
 
 
 app.get('/api/getImage', (req, res) => {
- // get query, q.id = x if url ends with /?id=x
- var q = url.parse(req.url, true).query;
- Image.findById(q.id, (err, image) => {
-  res.send(image);
+  // get query, q.id = x if url ends with /?id=x
+  var q = url.parse(req.url, true).query;
+  Image.findById(q.id, (err, image) => {
+    if (err) return console.error(err);
+    if (image==null) return res.send("no image with this ID in database");
+    res.send(image);
  });
+})
+
+app.post('/api/putLabel', (req, res) => {
+  var id = req.body.id;
+  var lab = req.body.label;
+ 
+  Image.findByIdAndUpdate(id, { $push: { "label" : lab }}, {new : true, useFindAndModify : false}, function(err, result){
+    if(err) console.log(err);
+    else{
+      res.send(result.label);
+    }
+  });
 })
 
 app.post('/sendData', (req, res) => {
@@ -57,9 +71,9 @@ db.once('open', () => {
 //  const testImage = new Image({ type: 'image/jpeg', data: imageData });
 //  testImage.save()
 
- // Image.find((err, images) => {
-  //  if (err) return console.error(err);
-   // console.log(images);});
+  Image.findById('000000000000000000000000', (err, images) => {
+   if (err) return console.error(err);
+   console.log(images);});
 
   //access task from schmas.js
   const Task = require('./schemas').task;
