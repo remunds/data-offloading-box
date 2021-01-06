@@ -71,6 +71,18 @@ app.post('/api/putLabel', (req, res) => {
   });
 })
 
+app.post('/api/putLabel', (req, res) => {
+  var id = req.body.id;
+  var lab = req.body.label;
+ 
+  Image.findByIdAndUpdate(id, { $push: { "label" : lab }}, {new : true, useFindAndModify : false}, function(err, result){
+    if(err) console.log(err);
+    else{
+      res.send(result.label);
+    }
+  });
+})
+
 app.post('/sendData', (req, res) => {
   res.send('youre trying to send data!')
   console.log(req.body);
