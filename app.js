@@ -7,16 +7,48 @@ const app = express()
 app.use(express.json())
 const port = 8000
 
+//mongoose controls our mongodb
+const mongoose = require('mongoose');
+mongoose.connect(`mongodb://localhost/${boxName}`, {useNewUrlParser: true});
+
+//data
+var taskList; 
+var Task;
+
+const db = mongoose.connection;
+db.on('error', console.error.bind(console, 'connection error:'));
+
+//Sending Tasks "function"
+db.once('open', () => {
+  // we're connected!
+  console.log('connected to db');
+
+  //access task from schemas.js
+  Task = require('./schemas').task;
+});
+
+
+
 app.get('/', (req, res) => {
   res.send('Hello World!')
 })
 
 app.get('/getData', (req, res) => {
+  console.log('Getting Data!')
   res.send('Getting Data!')
 })
 
 app.get('/api/getTasks', (req, res) => {
- res.send('hallo max') 
+  //a query would normally need to be executed after save has fully finished:
+  // TestTask.save().then(() => {//call find here})
+  // await could also work
+  Task.find((err, tasks) => {
+    if (err) return console.error(err);
+    console.log(tasks);
+    taskList = tasks
+  });
+  var taskListJson = JSON.stringify(taskList)
+  res.send(taskListJson)
 })
 
 app.post('/sendData', (req, res) => {
@@ -28,34 +60,29 @@ app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
 })
 
-//mongoose controls our mongodb
-const mongoose = require('mongoose');
-mongoose.connect(`mongodb://localhost/${boxName}`, {useNewUrlParser: true});
 
-const db = mongoose.connection;
-db.on('error', console.error.bind(console, 'connection error:'));
-db.once('open', () => {
-  // we're connected!
-  console.log('connected to db');
+// // db.once('open', () => {
+// //   // we're connected!
+// //   console.log('connected to db');
 
-  //access task from schmas.js
-  const Task = require('./schemas').task;
+// //   //access task from schemas.js
+// //   const Task = require('./schemas').task;
 
-  //create new task
-  const TestTask = new Task({ title: 'testizzda', asdf: 1337});
+// //   //create new task
+// //   //const TestTask = new Task({ title: 'testizzda', asdf: 1337});
 
-  //call methods of models like this
-  // TestTask.speak();
+// //   //call methods of models like this
+// //   // TestTask.speak();
 
-  //save task to mongodb like this
-  // TestTask.save();
+// //   //save task to mongodb like this
+// //   // TestTask.save();
 
-  //a query would normally need to be executed after save has fully finished:
-  // TestTask.save().then(() => {//call find here})
-  // await could also work
-  Task.find((err, tasks) => {
-    if (err) return console.error(err);
-    console.log(tasks);
-  });
+// //   //a query would normally need to be executed after save has fully finished:
+// //   // TestTask.save().then(() => {//call find here})
+// //   // await could also work
+// //   Task.find((err, tasks) => {
+// //     if (err) return console.error(err);
+// //     console.log(tasks);
+// //   });
 
-});
+// });
