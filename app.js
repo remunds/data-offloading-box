@@ -59,10 +59,11 @@ app.get('/api/getTasks', (req, res) => {
 app.post('/api/deleteTask', (req, res) =>{
   var taskDel = req.body;
   console.log(req.body, " <- Thats the printed result")
-  taskDel = JSON.parse(taskDel);
+  //taskDel = JSON.parse(taskDel);
   Task.deleteOne(taskDel, (err) => {
     if(err) return console.error(err);
   });
+  console.log("Deleted");
   res.sendStatus(200);
 });
 
