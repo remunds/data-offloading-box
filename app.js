@@ -3,13 +3,18 @@ const boxName = 'pi1';
 
 //express server
 const express = require('express')
+const bodyParser = require('body-parser')
 const app = express()
 app.use(express.json())
+app.use(bodyParser.urlencoded({
+  extended: false
+}))
+app.use(bodyParser.json())
 const port = 8000
 
 //mongoose controls our mongodb
 const mongoose = require('mongoose');
-mongoose.connect(`mongodb://localhost/${boxName}`, {useNewUrlParser: true});
+mongoose.connect(`mongodb://192.168.0.64/${boxName}`, {useNewUrlParser: true});
 
 //data
 var taskList; 
@@ -50,6 +55,16 @@ app.get('/api/getTasks', (req, res) => {
   var taskListJson = JSON.stringify(taskList)
   res.send(taskListJson)
 })
+
+app.post('/api/deleteTask', (req, res) =>{
+  var taskDel = req.body;
+  console.log(req.body, " <- Thats the printed result")
+  taskDel = JSON.parse(taskDel);
+  Task.deleteOne(taskDel, (err) => {
+    if(err) return console.error(err);
+  });
+  res.sendStatus(200);
+});
 
 app.post('/sendData', (req, res) => {
   res.send('youre trying to send ddata!')
