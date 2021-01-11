@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 //create schema with all needed fields
 const taskSchema = new mongoose.Schema({
     title: String,
-    asdf: Number
+    description: String
 });
 
 
