@@ -6,6 +6,11 @@ const taskSchema = new mongoose.Schema({
     description: String
 });
 
+const imageSchema = new mongoose.Schema({
+    type: String,
+    data: Buffer,
+    label: []
+});
 
 /* add methods like this:
 */
@@ -19,3 +24,4 @@ const taskSchema = new mongoose.Schema({
 
 //export the mongoose model with the name Task (creates collection tasks)
 module.exports.task = mongoose.model('Task', taskSchema);
+module.exports.image = mongoose.model('Image', imageSchema);
