@@ -1,16 +1,16 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose')
 
-//create schema with all needed fields
+// create schema with all needed fields
 const taskSchema = new mongoose.Schema({
-    title: String,
-    description: String
-});
+  title: String,
+  description: String
+})
 
 const imageSchema = new mongoose.Schema({
-    type: String,
-    data: Buffer,
-    label: []
-});
+  type: String,
+  data: Buffer,
+  label: []
+})
 
 /* add methods like this:
 */
@@ -22,6 +22,6 @@ const imageSchema = new mongoose.Schema({
 //   console.log(greeting);
 // }
 
-//export the mongoose model with the name Task (creates collection tasks)
-module.exports.task = mongoose.model('Task', taskSchema);
-module.exports.image = mongoose.model('Image', imageSchema);
+// export the mongoose model with the name Task (creates collection tasks)
+module.exports.task = mongoose.model('Task', taskSchema)
+module.exports.image = mongoose.model('Image', imageSchema)
