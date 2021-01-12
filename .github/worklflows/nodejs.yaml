@@ -5,7 +5,7 @@ on: [push]
 jobs:
   build:
 
-    runs-on: raspberrypi-os-latest
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
