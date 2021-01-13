@@ -4,17 +4,25 @@
   "description": "",
   "main": "app.js",
   "scripts": {
+    "standard": "standard",
     "test": "mocha"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
-    "mongoose": "^5.11.9"
+    "mongoose": "^5.11.9",
+    "nodemon": "^2.0.7"
   },
   "devDependencies": {
     "mocha": "^8.2.1",
     "should": "^13.2.3",
+    "standard": "^16.0.3",
     "supertest": "^6.0.1"
+  },
+  "standard": {
+    "ignore": [
+      "/test/"
+    ]
   }
 }
