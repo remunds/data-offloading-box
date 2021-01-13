@@ -294,7 +294,7 @@ app.post('/api/writeData', async (req, res) => {
   })
 })
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`listening at http://localhost:${port}`)
 })
 
@@ -308,7 +308,9 @@ db.on('error', console.error.bind(console, 'connection error:'))
 db.once('open', () => {
   // we're connected!
   console.log('connected to db')
-  // generate tasks
+
   const generator = require('./taskgenerator')
   generator.apply()
 })
+
+module.exports = server
