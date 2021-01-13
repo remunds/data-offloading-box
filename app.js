@@ -121,7 +121,7 @@ app.listen(port, () => {
 
 // mongoose controls our mongodb
 const mongoose = require('mongoose')
-mongoose.connect(`mongodb://192.168.0.102/${boxName}`, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(`mongodb://localhost/${boxName}`, { useNewUrlParser: true, useUnifiedTopology: true })
 
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'connection error:'))
