@@ -33,7 +33,7 @@ app.get('/getData', (req, res) => {
 })
 
 app.get('/api/getTasks', (req, res) => {
-  Task.find((err, tasks) => {
+  Task.find({}, (err, tasks) => {
     if (err) return console.error(err)
     console.log(tasks)
     res.send(tasks)
