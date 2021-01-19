@@ -9,45 +9,76 @@ const port = 8000
 
 const multer = require('multer')
 
+// this is needed for the gridfs (the splitting of files/chunks)
+const { createReadStream, unlinkSync } = require('fs')
+const { createModel } = require('mongoose-gridfs')
+const fileUpload = require('express-fileupload')
+app.use(fileUpload({
+  useTempFiles: true,
+  tempFileDir: './tmp/'
+}))
+
 const schemas = require('./schemas')
 const Task = schemas.task
 const Image = schemas.image
 const Chunk = schemas.chunk
 const File = schemas.file
 
+// gets the file or chunk with the highest priority to send next
+// returns: File or Chunk with the highest priority, or
+// if not existing: -1
 async function getHighestPriorityFile () {
   let highestPriority
   // find oldest and least downloaded chunk + file
   const priorityChunk = await Chunk.findOne().sort({ downloads: 1, timestamp: 1 }).exec()
   const priorityFile = await File.findOne().sort({ downloads: 1, uploadDate: 1 }).exec()
-  if (priorityChunk.downloads == null || priorityFile.downloads == null ||
-    priorityChunk.timestamp == null || priorityFile.uploadDate == null) {
-    return -1
-  }
-  if (priorityChunk.downloads > priorityFile.downloads) {
+
+  if (!priorityChunk && priorityFile && priorityFile.downloads != null && priorityFile.uploadDate != null) {
+    // only a valid file could be found
     highestPriority = priorityFile
     // count downloads up
     File.updateOne({ _id: priorityFile.id }, { downloads: priorityFile.downloads + 1 }).exec()
-  } else if (priorityChunk.downloads < priorityFile.downloads) {
+  } else if (!priorityFile && priorityChunk && priorityChunk.downloads != null && priorityChunk.timestamp != null) {
+    // only a valid chunk could be found
     highestPriority = priorityChunk
     Chunk.updateOne({ _id: priorityChunk.id }, { downloads: priorityChunk.downloads + 1 }).exec()
   } else {
-    if (priorityChunk.timestamp >= priorityFile.uploadDate) {
+    if (!priorityChunk || !priorityFile || priorityChunk.downloads == null || priorityFile.downloads == null ||
+    !priorityChunk.timestamp || !priorityFile.uploadDate) {
+    // neither a valid file nor a valid chunk could be found for uploading
+      return -1
+    }
+    if (priorityChunk.downloads > priorityFile.downloads) {
+      // the file has the higher priority due to downloads
       highestPriority = priorityFile
       File.updateOne({ _id: priorityFile.id }, { downloads: priorityFile.downloads + 1 }).exec()
-    } else {
+    } else if (priorityChunk.downloads < priorityFile.downloads) {
+      // the chunk has the higher priority due to downloads
       highestPriority = priorityChunk
       Chunk.updateOne({ _id: priorityChunk.id }, { downloads: priorityChunk.downloads + 1 }).exec()
+    } else {
+      // compare by timestamps (if all files/chunks have the same downloads)
+      if (priorityChunk.timestamp >= priorityFile.uploadDate) {
+      // the file has the higher priority due to timestamp
+        highestPriority = priorityFile
+        File.updateOne({ _id: priorityFile.id }, { downloads: priorityFile.downloads + 1 }).exec()
+      } else {
+      // the chunk has the higher priority due to timestamp
+        highestPriority = priorityChunk
+        Chunk.updateOne({ _id: priorityChunk.id }, { downloads: priorityChunk.downloads + 1 }).exec()
+      }
     }
   }
   // copy to delete the downloads property
   const toReturn = ({ ...highestPriority }._doc)
+  // downloads is not relevant for the application
   delete toReturn.downloads
   return toReturn
 }
 
 app.get('/api/register', (req, res) => {
   res.send({ piID: boxName })
+  console.log('registered a phone')
 })
 
 app.get('/api/getData', async (req, res) => {
@@ -142,13 +173,48 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
   })
 })
 
+// chunks Data and writes it to DB
+// Example:
+// Query: /api/writeData/
+// Body: contains file as form-data type: 'file' and name: 'sensor'
+app.post('/api/writeData', async (req, res) => {
+  if (!req.files) {
+    res.status(400)
+    res.send({ error: 'no file' })
+    return
+  }
+
+  // create model so that our collections are called fs.files and fs.chunks
+  const fs = createModel({
+    modelName: 'fs'
+  })
+
+  // write file to db
+  const readStream = createReadStream(req.files.sensor.tempFilePath)
+  const options = ({ filename: req.files.sensor.name, contentType: req.files.sensor.mimetype })
+  await fs.write(options, readStream, async (error, file) => {
+    if (!error) {
+      res.status(200).send(req.body)
+      unlinkSync(req.files.sensor.tempFilePath, (err) => {
+        if (err) {
+          console.log('something went wrong')
+        }
+      })
+    }
+    console.log('wrote file with id: ' + file._id)
+    // add the field downloads to file and chunks; add timestamp to chunk
+    File.findByIdAndUpdate(file._id, { downloads: 0 }).exec()
+    Chunk.updateMany({ files_id: file._id }, { downloads: 0, timestamp: Date.now() }).exec()
+  })
+})
+
 app.listen(port, () => {
   console.log(`listening at http://localhost:${port}`)
 })
 
 // mongoose controls our mongodb
 const mongoose = require('mongoose')
-mongoose.connect(`mongodb://localhost/${boxName}`, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(`mongodb://localhost/${boxName}`, { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true, useFindAndModify: false })
 
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'connection error:'))
