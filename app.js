@@ -115,28 +115,27 @@ app.post('/api/putLabel', (req, res) => {
   })
 })
 
-
-var multer = require('multer');
+const multer = require('multer')
 // uploaded files are saved to the uploads directory to handle multipart data
-var upload = multer({dest: 'uploads/'});
+const upload = multer({ dest: 'uploads/' })
 
-app.post('/api/saveUserImage', upload.single("data"), (req, res) => {
-  var type = req.body.type;
-  var label = req.body.label;
-  var imgBytes = req.body.data;
-  var data = Buffer.from(imgBytes, "base64");
-  var img = new Image({
+app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
+  const type = req.body.type
+  const label = req.body.label
+  const imgBytes = req.body.data
+  const data = Buffer.from(imgBytes, 'base64')
+  const img = new Image({
     type: type,
     data: data,
     label: label
-  });
+  })
 
-  img.save(function(err, saved) {
-    if (err){
-      res.send({error: "image couldn't be saved to database"});
+  img.save(function (err, saved) {
+    if (err) {
+      res.send({ error: 'image could not be saved to database' })
     } else {
-      console.log("user image saved to db");
-      res.sendStatus(200);
+      console.log('user image saved to db')
+      res.sendStatus(200)
     }
   })
 })
