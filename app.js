@@ -7,6 +7,8 @@ const app = express()
 app.use(express.json())
 const port = 8000
 
+const multer = require('multer')
+
 const schemas = require('./schemas')
 const Task = schemas.task
 const Image = schemas.image
@@ -111,6 +113,31 @@ app.post('/api/putLabel', (req, res) => {
       res.send({ error: 'could not find image in database' })
     } else {
       res.send(result.label)
+    }
+  })
+})
+
+// uploaded files are saved to the uploads directory to handle multipart data
+const upload = multer({ dest: 'uploads/' })
+
+app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
+  const type = req.body.type
+  const label = req.body.label
+  const imgBytes = req.body.data
+  const data = Buffer.from(imgBytes, 'base64')
+  const img = new Image({
+    type: type,
+    data: data,
+    label: label
+  })
+
+  img.save(function (err, saved) {
+    if (err) {
+      res.sendStatus(500)
+      res.send({ error: 'image could not be saved to database' })
+    } else {
+      console.log('user image saved to db')
+      res.sendStatus(200)
     }
   })
 })
