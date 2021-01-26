@@ -17,7 +17,7 @@ const imageSchema = new mongoose.Schema({
 const chunkSchema = new mongoose.Schema({
   timestamp: Number,
   downloads: Number,
-  files_id: String,
+  files_id: mongoose.ObjectId,
   n: Number,
   data: [Buffer]
 })
@@ -30,8 +30,7 @@ const fileSchema = new mongoose.Schema({
   md5: String,
   filename: String,
   contentType: String,
-  aliases: [String],
-  metadate: Buffer // any
+  aliases: [String]
 })
 
 /* add methods like this:
@@ -47,5 +46,5 @@ const fileSchema = new mongoose.Schema({
 // export the mongoose model with the name Task (creates collection tasks)
 module.exports.task = mongoose.model('Task', taskSchema)
 module.exports.image = mongoose.model('Image', imageSchema)
-module.exports.chunk = mongoose.model('Chunk', chunkSchema)
-module.exports.file = mongoose.model('File', fileSchema)
+module.exports.chunk = mongoose.model('fs.chunk', chunkSchema)
+module.exports.file = mongoose.model('fs.file', fileSchema)
