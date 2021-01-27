@@ -24,6 +24,9 @@ const Image = schemas.image
 const Chunk = schemas.chunk
 const File = schemas.file
 
+let dbIDsToDownload = new Map()
+
+
 // gets the file or chunk with the highest priority to send next
 // returns: File or Chunk with the highest priority, or
 // if not existing: -1
@@ -77,8 +80,44 @@ async function getHighestPriorityFile () {
 }
 
 app.get('/api/register', (req, res) => {
-  res.send({ piID: boxName })
-  console.log('registered a phone')
+  res.send({ piID: boxName, timestamp: Date.now() })
+})
+
+/* Register all ids from devices DB to filter them out of list to download
+   as a result we get a new map entry with the devicce id(timestamp) as key
+   and an array with all ids that are not downloaded yet as value.
+   IDs already on phone are replaced with a "onPhone" string
+   If no data found on box the download will be cancelled */
+app.post('/api/registerCurrentData', async (req, res) => {
+  console.log('Registering Device IDs... ')
+  const currentIDs = req.body.idList
+  const timestamp = req.body.timestamp
+  console.log('DeviceID: ' + timestamp)
+  let dbIDs = []
+
+  dbIDs = await File.find({}, '_id')
+  dbIDs = dbIDs.concat(await Chunk.find({}, '_id'))
+
+  if (dbIDs.length === 0) {
+    res.send(201)
+  }
+
+  if (currentIDs.length === 0) {
+    dbIDsToDownload.set(req.body.timestamp, dbIDs)
+  } else {
+    let i
+    let j
+
+    for (i = 0; i < dbIDs.length; i++) {
+      for (j = 0; j < currentIDs.length; j++) {
+        if (dbIDs[i].id === currentIDs[j]) {
+          dbIDs[i] = 'onPhone'
+        }
+      }
+    }
+    dbIDsToDownload.set(req.body.timestamp, dbIDs)
+  }
+  res.sendStatus(200)
 })
 
 app.get('/api/getData', async (req, res) => {
@@ -89,6 +128,53 @@ app.get('/api/getData', async (req, res) => {
   } else {
     res.send(fileToSend)
   }
+})
+
+/* Every time we call /api/getAllData the first id which is contained in the map will
+ be searched in db and sent to the device. After that the id will be replaced with our "onPhone" String */
+app.get('/api/getAllData', async (req, res) => {
+  console.log('Getting a chunk or file')
+  const timestamp = parseInt(req.query.deviceTimestamp)
+  const dbIDs = dbIDsToDownload.get(timestamp)
+  let i = 0
+  while (dbIDs[i] === 'onPhone') {
+    i++
+  }
+  if (i === dbIDs.length) {
+    res.sendStatus(201)
+    dbIDsToDownload.delete(timestamp)
+    return
+  }
+  File.find({ _id: dbIDs[i].id }, (err, fileOrChunk) => {
+    if (err) {
+      res.status(400)
+      res.send({ error: 'no files or chunks defined by given id' })
+    } else if (fileOrChunk.length === 0) {
+      Chunk.find({ _id: dbIDs[i].id }, (err, chunk) => {
+        if (err) {
+          res.status(400)
+          res.send({ error: 'could not find file or chunk by given id' })
+        }
+        if (chunk.length === 0) {
+          res.status(400)
+          res.send({ error: 'no chunks defined by given id' })
+        } else {
+          fileOrChunk = chunk
+          console.log(fileOrChunk[0], ' von chunk auf file ')
+          console.log('sending chunk')
+          res.send(fileOrChunk[0])
+          dbIDs[i] = 'onPhone'
+          dbIDsToDownload.set(timestamp, dbIDs)
+          console.log(dbIDs)
+        }
+      })
+    } else {
+      console.log('sending file: ', fileOrChunk[0])
+      res.send(fileOrChunk[0])
+      dbIDs[i] = 'onPhone'
+      dbIDsToDownload.set(timestamp, dbIDs)
+    }
+  })
 })
 
 app.get('/api/getTasks', (req, res) => {
