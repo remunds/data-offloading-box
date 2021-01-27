@@ -92,7 +92,7 @@ app.post('/api/registerCurrentData', async (req, res) => {
   console.log('Registering Device IDs... ')
   const currentIDs = req.body.idList
   const timestamp = req.body.timestamp
-  console.log('Timestamp: ' + timestamp)
+  console.log('DeviceID: ' + timestamp)
   let dbIDs = []
 
   dbIDs = await File.find({}, '_id')
@@ -116,9 +116,8 @@ app.post('/api/registerCurrentData', async (req, res) => {
       }
     }
     dbIDsToDownload.set(req.body.timestamp, dbIDs)
-    console.log(dbIDsToDownload.get(timestamp))
   }
-  res.send(200)
+  res.sendStatus(200)
 })
 
 app.get('/api/getData', async (req, res) => {
@@ -133,18 +132,19 @@ app.get('/api/getData', async (req, res) => {
 
 /* Every time we call /api/getAllData the first id which is contained in the map will
  be searched in db and sent to the device. After that the id will be replaced with our "onPhone" String */
-app.post('/api/getAllData', async (req, res) => {
+app.get('/api/getAllData', async (req, res) => {
   console.log('Getting a chunk or file')
-  const dbIDs = dbIDsToDownload.get(req.body.timestamp)
+  const timestamp = parseInt(req.query.deviceTimestamp)
+  const dbIDs = dbIDsToDownload.get(timestamp)
   let i = 0
   while (dbIDs[i] === 'onPhone') {
     i++
   }
   if (i === dbIDs.length) {
     res.sendStatus(201)
+    dbIDsToDownload.delete(timestamp)
     return
   }
-  console.log(dbIDs[i].id)
   File.find({ _id: dbIDs[i].id }, (err, fileOrChunk) => {
     if (err) {
       res.status(400)
@@ -164,7 +164,7 @@ app.post('/api/getAllData', async (req, res) => {
           console.log('sending chunk')
           res.send(fileOrChunk[0])
           dbIDs[i] = 'onPhone'
-          dbIDsToDownload.set(req.body.timestamp, dbIDs)
+          dbIDsToDownload.set(timestamp, dbIDs)
           console.log(dbIDs)
         }
       })
@@ -172,8 +172,7 @@ app.post('/api/getAllData', async (req, res) => {
       console.log('sending file: ', fileOrChunk[0])
       res.send(fileOrChunk[0])
       dbIDs[i] = 'onPhone'
-      dbIDsToDownload.set(req.body.timestamp, dbIDs)
-      console.log(dbIDs)
+      dbIDsToDownload.set(timestamp, dbIDs)
     }
   })
 })
