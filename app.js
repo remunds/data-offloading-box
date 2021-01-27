@@ -24,8 +24,7 @@ const Image = schemas.image
 const Chunk = schemas.chunk
 const File = schemas.file
 
-let dbIDsToDownload = new Map()
-
+const dbIDsToDownload = new Map()
 
 // gets the file or chunk with the highest priority to send next
 // returns: File or Chunk with the highest priority, or
