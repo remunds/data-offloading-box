@@ -1,11 +1,12 @@
 // general settings
-const boxName = 'pi1'
+const config = require('./config.json')
+const boxName = config.nodeName
 
 // express server
 const express = require('express')
 const app = express()
 app.use(express.json())
-const port = 8000
+const port = config.backendPort
 
 const multer = require('multer')
 
@@ -299,7 +300,8 @@ app.listen(port, () => {
 
 // mongoose controls our mongodb
 const mongoose = require('mongoose')
-mongoose.connect(`mongodb://localhost/${boxName}`, { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true, useFindAndModify: false })
+
+mongoose.connect(`mongodb://${config.dbIp}/${boxName}`, { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true, useFindAndModify: false })
 
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'connection error:'))
