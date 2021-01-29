@@ -32,11 +32,13 @@ const dbIDsToDownload = new Map()
 // gets the file or chunk with the highest priority to send next
 // returns: File or Chunk with the highest priority, or
 // if not existing: -1
-async function getHighestPriorityFile () {
+// input: bool priorityOld: true: sort by oldest date first, false: sort by newest date first
+async function getHighestPriorityFile (priorityOld) {
   let highestPriority
   // find oldest and least downloaded chunk + file
-  const priorityChunk = await Chunk.findOne().sort({ downloads: 1, timestamp: 1 }).exec()
-  const priorityFile = await File.findOne().sort({ downloads: 1, uploadDate: 1 }).exec()
+  const sortBy = priorityOld ? 1 : -1
+  const priorityChunk = await Chunk.findOne().sort({ downloads: 1, timestamp: sortBy }).exec()
+  const priorityFile = await File.findOne().sort({ downloads: 1, uploadDate: sortBy }).exec()
 
   if (!priorityChunk && priorityFile && priorityFile.downloads != null && priorityFile.uploadDate != null) {
     // only a valid file could be found
@@ -49,9 +51,9 @@ async function getHighestPriorityFile () {
     Chunk.updateOne({ _id: priorityChunk.id }, { downloads: priorityChunk.downloads + 1 }).exec()
   } else {
     if (!priorityChunk || !priorityFile || priorityChunk.downloads == null || priorityFile.downloads == null ||
-    !priorityChunk.timestamp || !priorityFile.uploadDate) {
-    // neither a valid file nor a valid chunk could be found for uploading
-      return -1
+      !priorityChunk.timestamp || !priorityFile.uploadDate) {
+      // neither a valid file nor a valid chunk could be found for uploading
+      return null
     }
     if (priorityChunk.downloads > priorityFile.downloads) {
       // the file has the higher priority due to downloads
@@ -63,12 +65,12 @@ async function getHighestPriorityFile () {
       Chunk.updateOne({ _id: priorityChunk.id }, { downloads: priorityChunk.downloads + 1 }).exec()
     } else {
       // compare by timestamps (if all files/chunks have the same downloads)
-      if (priorityChunk.timestamp >= priorityFile.uploadDate) {
-      // the file has the higher priority due to timestamp
+      if ((priorityOld && priorityChunk.timestamp >= priorityFile.uploadDate) || (!priorityOld && priorityChunk.timestamp < priorityFile.uploadDate)) {
+        // the file has the higher priority due to timestamp
         highestPriority = priorityFile
         File.updateOne({ _id: priorityFile.id }, { downloads: priorityFile.downloads + 1 }).exec()
       } else {
-      // the chunk has the higher priority due to timestamp
+        // the chunk has the higher priority due to timestamp
         highestPriority = priorityChunk
         Chunk.updateOne({ _id: priorityChunk.id }, { downloads: priorityChunk.downloads + 1 }).exec()
       }
@@ -123,11 +125,20 @@ app.post('/api/registerCurrentData', async (req, res) => {
 })
 
 app.get('/api/getData', async (req, res) => {
-  const fileToSend = await getHighestPriorityFile()
-  if (fileToSend === -1) {
-    res.status(400).send({ error: 'could not find highest priority file' })
+  let fileToSend
+  // the query data determines which priority we have: newest or oldest first.
+  const priority = req.query.data
+  if (priority === 'old') {
+    fileToSend = await getHighestPriorityFile(true)
+  } else if (priority === 'new') {
+    fileToSend = await getHighestPriorityFile(false)
   } else {
-    res.send(fileToSend)
+    res.status(400).send({ 'error': 'query needs to be data=old or new'})
+  }
+  if (!fileToSend) {
+    res.status(204)
+  } else {
+    res.status(200).send(fileToSend)
   }
 })
 

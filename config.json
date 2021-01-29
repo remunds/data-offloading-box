@@ -2,7 +2,7 @@
     "__sensorbox": 0,
     "__backendServer": 1,
     "configuration": 0,
-    "nodeName": 0,
+    "nodeName": 1,
     "backendIp": "127.0.0.1",
     "backendPort": "8000",
     "dbIp": "127.0.0.1",
