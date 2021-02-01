@@ -11,13 +11,15 @@ const port = config.backendPort
 const multer = require('multer')
 
 // this is needed for the gridfs (the splitting of files/chunks)
-const { createReadStream, unlinkSync } = require('fs')
+const { createReadStream, unlinkSync, readFileSync } = require('fs')
 const { createModel } = require('mongoose-gridfs')
+/*
 const fileUpload = require('express-fileupload')
 app.use(fileUpload({
   useTempFiles: true,
   tempFileDir: './tmp/'
 }))
+*/
 
 const schemas = require('./schemas')
 const Task = schemas.task
@@ -238,15 +240,22 @@ app.post('/api/putLabel', (req, res) => {
 const upload = multer({ dest: 'uploads/' })
 
 app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
-  const type = req.body.type
-  const label = req.body.label
-  const imgBytes = req.body.data
-  const data = Buffer.from(imgBytes, 'base64')
+  //console.log(req.files)  
+  //console.log(req.files.data.tempFilePath)
+  console.log(req.file)
+  // console.log(req.body)
+  //console.log(req)
+  //console.log(req.body)
+  // console.log(req.file.path)
+  console.log(Buffer.from(readFileSync(req.file.path, 'base64')).toString('binary'))
   const img = new Image({
-    type: type,
-    data: data,
-    label: label
+    type: "image/jpeg",
+    data: Buffer.from(readFileSync(req.file.path), 'base64'),
+    takenBy: req.body.takenBy,
+    label: req.body.label
   })
+
+  console.log(img)
 
   img.save(function (err, saved) {
     if (err) {
@@ -257,6 +266,7 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
       res.sendStatus(200)
     }
   })
+  unlinkSync(req.file.path)
 })
 
 // chunks Data and writes it to DB

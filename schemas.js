@@ -11,6 +11,7 @@ const taskSchema = new mongoose.Schema({
 const imageSchema = new mongoose.Schema({
   type: String,
   data: Buffer,
+  takenBy: String,
   label: []
 })
 
