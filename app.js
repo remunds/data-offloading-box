@@ -240,22 +240,12 @@ app.post('/api/putLabel', (req, res) => {
 const upload = multer({ dest: 'uploads/' })
 
 app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
-  //console.log(req.files)  
-  //console.log(req.files.data.tempFilePath)
-  console.log(req.file)
-  // console.log(req.body)
-  //console.log(req)
-  //console.log(req.body)
-  // console.log(req.file.path)
-  console.log(Buffer.from(readFileSync(req.file.path, 'base64')).toString('binary'))
   const img = new Image({
-    type: "image/jpeg",
+    type: 'image/jpeg',
     data: Buffer.from(readFileSync(req.file.path), 'base64'),
     takenBy: req.body.takenBy,
     label: req.body.label
   })
-
-  console.log(img)
 
   img.save(function (err, saved) {
     if (err) {
