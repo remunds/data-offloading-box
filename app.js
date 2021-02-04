@@ -135,11 +135,7 @@ app.get('/api/getData', async (req, res) => {
   } else {
     res.status(400).send({ error: 'query needs to be data=old or new' })
   }
-  if (!fileToSend) {
-    res.status(204)
-  } else {
-    res.status(200).send(fileToSend)
-  }
+  res.status(200).send(fileToSend)
 })
 
 /* Every time we call /api/getAllData the first id which is contained in the map will
