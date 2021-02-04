@@ -133,7 +133,7 @@ app.get('/api/getData', async (req, res) => {
   } else if (priority === 'new') {
     fileToSend = await getHighestPriorityFile(false)
   } else {
-    res.status(400).send({ 'error': 'query needs to be data=old or new'})
+    res.status(400).send({ error: 'query needs to be data=old or new' })
   }
   if (!fileToSend) {
     res.status(204)
