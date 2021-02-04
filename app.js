@@ -125,8 +125,7 @@ app.post('/api/registerCurrentData', async (req, res) => {
 app.get('/api/getData', async (req, res) => {
   const fileToSend = await getHighestPriorityFile()
   if (fileToSend === -1) {
-    res.status(400)
-    res.send({ error: 'could not find highest priority file' })
+    res.status(400).send({ error: 'could not find highest priority file' })
   } else {
     res.send(fileToSend)
   }
@@ -149,17 +148,14 @@ app.get('/api/getAllData', async (req, res) => {
   }
   File.find({ _id: dbIDs[i].id }, (err, fileOrChunk) => {
     if (err) {
-      res.status(400)
-      res.send({ error: 'no files or chunks defined by given id' })
+      res.status(400).send({ error: 'no files or chunks defined by given id' })
     } else if (fileOrChunk.length === 0) {
       Chunk.find({ _id: dbIDs[i].id }, (err, chunk) => {
         if (err) {
-          res.status(400)
-          res.send({ error: 'could not find file or chunk by given id' })
+          res.status(400).send({ error: 'could not find file or chunk by given id' })
         }
         if (chunk.length === 0) {
-          res.status(400)
-          res.send({ error: 'no chunks defined by given id' })
+          res.status(400).send({ error: 'no chunks defined by given id' })
         } else {
           fileOrChunk = chunk
           console.log(fileOrChunk[0], ' von chunk auf file ')
@@ -182,12 +178,10 @@ app.get('/api/getAllData', async (req, res) => {
 app.get('/api/getTasks', (req, res) => {
   Task.find({}, (err, tasks) => {
     if (err) {
-      res.status(400)
-      res.send({ error: 'database not available' })
+      res.status(400).send({ error: 'database not available' })
     }
     if (tasks == null) {
-      res.status(400)
-      res.send({ error: 'no tasks defined' })
+      res.status(400).send({ error: 'no tasks defined' })
     } else {
       res.send(tasks)
     }
@@ -197,8 +191,7 @@ app.get('/api/getTasks', (req, res) => {
 app.post('/api/deleteTask', (req, res) => {
   Task.deleteOne(req.body, (err) => {
     if (err) {
-      res.status(400)
-      res.send({ error: 'could not delete task' })
+      res.status(400).send({ error: 'could not delete task' })
     } else {
       res.sendStatus(200)
     }
@@ -209,11 +202,9 @@ app.get('/api/getImage', (req, res) => {
   // get query, q.id = x if url ends with ?id=x
   Image.findById(req.query.id, (err, image) => {
     if (err) {
-      res.status(400)
-      res.send({ error: 'database error' })
+      res.status(400).send({ error: 'database error' })
     } else if (image == null) {
-      res.status(400)
-      res.send({ error: 'could not find image in database' })
+      res.status(400).send({ error: 'could not find image in database' })
     } else {
       res.send(image)
     }
@@ -224,12 +215,10 @@ app.post('/api/putLabel', (req, res) => {
   // post query, q.id = x; q.label = y if url ends with ?id=x&?label=y
   Image.findByIdAndUpdate(req.body.id, { $push: { label: req.body.label } }, { new: true, useFindAndModify: false }, (err, result) => {
     if (err) {
-      res.status(400)
-      res.send({ error: 'database error' })
+      res.status(400).send({ error: 'database error' })
     }
     if (result == null) {
-      res.status(400)
-      res.send({ error: 'could not find image in database' })
+      res.status(400).send({ error: 'could not find image in database' })
     } else {
       res.send(result.label)
     }
@@ -249,8 +238,7 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
 
   img.save(function (err, saved) {
     if (err) {
-      res.sendStatus(500)
-      res.send({ error: 'image could not be saved to database' })
+      res.sendStatus(500).send({ error: 'image could not be saved to database' })
     } else {
       console.log('user image saved to db')
       res.sendStatus(200)
@@ -265,8 +253,7 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
 // Body: contains file as form-data type: 'file' and name: 'sensor'
 app.post('/api/writeData', async (req, res) => {
   if (!req.files) {
-    res.status(400)
-    res.send({ error: 'no file' })
+    res.status(400).send({ error: 'no file' })
     return
   }
 
