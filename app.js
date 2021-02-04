@@ -11,7 +11,7 @@ const port = config.backendPort
 const multer = require('multer')
 
 // this is needed for the gridfs (the splitting of files/chunks)
-const { createReadStream, unlinkSync, readFileSync } = require('fs')
+const { createReadStream, unlinkSync } = require('fs')
 const { createModel } = require('mongoose-gridfs')
 /*
 const fileUpload = require('express-fileupload')
