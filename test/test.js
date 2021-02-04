@@ -14,7 +14,7 @@ async function setupMongoDB() {
   const Image = schemas.image
 
   const buffer = Buffer.from('../dachs.jpg')
-  const im = new Image({ type: 'image/jpeg', data: buffer, label: [] })
+  const im = new Image({ type: 'image/jpeg', data: buffer, label: [], takenBy: "box" })
   imageID = (await im.save()).id;
   console.log("id: " + imageID)
 }
