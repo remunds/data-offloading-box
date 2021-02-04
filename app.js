@@ -84,7 +84,7 @@ async function getHighestPriorityFile (priorityOld) {
 }
 
 app.get('/api/register', (req, res) => {
-  res.send({ piID: boxName, timestamp: Date.now() })
+  res.send({ piId: boxName, timestamp: Date.now() })
 })
 
 /* Register all ids from devices DB to filter them out of list to download
