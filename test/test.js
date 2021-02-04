@@ -2,16 +2,35 @@
 const supertest = require('supertest')
 const should = require('should')
 
+require('../app')
+
 const server = supertest.agent('http://localhost:8000')
+
+let imageID;
+
+async function setupMongoDB() {
+  const schemas = require('../schemas')
+  const Task = schemas.task
+  const Image = schemas.image
+
+  const buffer = Buffer.from('../dachs.jpg')
+  const im = new Image({ type: 'image/jpeg', data: buffer, label: [], takenBy: "box" })
+  imageID = (await im.save()).id;
+  console.log("id: " + imageID)
+}
+
+before(async function () {
+  await setupMongoDB();
+});
 
 describe('getImage by ID test', function () {
   it('should return image', function (done) {
-    // no ID should return error
     server
-      .get('/api/getImage/?id=5ff444933dd44d0e8aa05509')
+      .get('/api/getImage/?id=' + imageID)
       .expect(200)
       .end(function (err, res) {
         res.status.should.equal(200)
+
         should.not.exist(err)
         res.body.should.have.property('label')
         res.body.should.have.property('type', 'image/jpeg')
@@ -23,11 +42,11 @@ describe('getImage by ID test', function () {
   it('non existing ID should return json with error message', function (done) {
     server
       .get('/api/getImage/?id=000000000000000000000000')
-      .expect(200)
+      .expect(400)
       .end(function (err, res) {
         should.not.exist(err)
-        res.text.should.equal('no image with this ID in database')
-        res.status.should.equal(200)
+        res.text.should.equal('{"error":"could not find image in database"}')
+        res.status.should.equal(400)
         done()
       })
   })
@@ -37,10 +56,9 @@ describe('/putLabel test', function () {
   it('should add label to array in database', function (done) {
     server
       .post('/api/putLabel')
-      .send({ id: '5ff444933dd44d0e8aa05509', label: 2 })
+      .send({ id: imageID, label: 2 })
       .expect(200)
       .end(function (err, res) {
-        console.log(res.body)
         should(res.body.pop()).equal(2)
         done()
       })
