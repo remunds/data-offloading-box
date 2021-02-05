@@ -4,8 +4,6 @@ GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 CONFIGURATIONTOML=~/dtn7-go/cmd/dtnd/configuration.toml
 
-BACKEND='127.0.0.1:8000'
-
 #DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 goLang='https://golang.org/dl/go1.15.6.linux-arm64.tar.gz'
@@ -121,19 +119,20 @@ echo -e "${NC}install jq ${NC}"
 sudo apt install jq
 
 #sensorbox
-if [ $(jq '.configuration' /home/pi/data-offloading-backend/config_default.json) == 0 ];
+if [ $(jq '.configuration' /home/pi/data-offloading-box/config_default.json) == 0 ];
 then
 	#register at backend
 	echo -e "${GREEN}register at backend ${GREEN}"
-	MAC=$(ip a  | awk '/link\/ether/ {print $2}')
-	BACKEND=cat config.json | jq '.backendIp'
-	BACKEND=$BACKEND: cat config.json | jq '.backendPort' 
+	MAC=$(ip a  | awk '/link\/ether/ {print $2}' | sed -n '1p')
+	BACKEND="$(cat /home/pi/data-offloading-box/config_default.json | jq -r '.backendIp'):$(cat /home/pi/data-offloading-box/config_default.json | jq -r '.backendPort')"
 	NAME=""
 	URL=$(echo $BACKEND'/api/register/'$MAC)
+	echo $URL
+	echo $BACKEND
 	NAME=$(curl $URL | jq .nodeName)
 	echo boxname: $NAME
 
-	jq ".nodeName |= $NAME" /home/pi/data-offloading-backend/config_default.json  > /home/pi/data-offloading-backend/config.json
+	jq ".nodeName |= $NAME" /home/pi/data-offloading-box/config_default.json  > /home/pi/data-offloading-box/config.json
 	ORG='node-id = "dtn:\/\/node-name\/"'
 	TEMPLATE='node-id = "dtn:\/\/'$NAME'\/"'
 	sed -i "s/$ORG/$TEMPLATE/" $CONFIGURATIONTOML
@@ -144,10 +143,10 @@ then
 fi
 
 #backend
-if [ $(jq '.configuration' /home/pi/data-offloading-backend/config_default.json) == 1 ];
+if [ $(jq '.configuration' /home/pi/data-offloading-box/config_default.json) == 1 ];
 then
 	ORG='node-id = "dtn:\/\/node-name\/"'
 	TEMPLATE='node-id = "dtn:\/\/0\/"'
 	sed -i "s/$ORG/$TEMPLATE/" $CONFIGURATIONTOML
-	jq ".nodeName |= 0" /home/pi/data-offloading-backend/config_default.json  > /home/pi/data-offloading-backend/config.json
+	jq ".nodeName |= 0" /home/pi/data-offloading-box/config_default.json  > /home/pi/data-offloading-box/config.json
 fi
