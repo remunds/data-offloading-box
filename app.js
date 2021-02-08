@@ -9,13 +9,9 @@ app.use(express.json())
 const port = config.backendPort
 
 // this is needed for the gridfs (the splitting of files/chunks)
-const { createReadStream, unlinkSync, readFileSync } = require('fs')
+const { createReadStream, unlink, readFileSync } = require('fs')
 const { createModel } = require('mongoose-gridfs')
 const multer = require('multer')
-
-// this is needed for the gridfs (the splitting of files/chunks)
-const { createReadStream, unlink } = require('fs')
-const { createModel } = require('mongoose-gridfs')
 
 // uploaded files are saved to the uploads directory to handle multipart data
 const upload = multer({ dest: 'uploads/' })
@@ -240,7 +236,7 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
   })
   unlink(req.file.path, (err) => {
     if (err) {
-      res.status(500).send({'error': 'temp file could not be deleted'})
+      res.status(500).send({ error: 'temp file could not be deleted' })
     }
   })
 
@@ -261,7 +257,6 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
 // Query: /api/writeData/
 // Body: contains file as form-data type: 'file' and name: 'sensor'
 app.post('/api/writeData', upload.single('sensor'), async (req, res) => {
-
   // create model so that our collections are called fs.files and fs.chunks
   const fs = createModel({
     modelName: 'fs'
@@ -273,7 +268,7 @@ app.post('/api/writeData', upload.single('sensor'), async (req, res) => {
   const options = ({ filename: req.file.originalname, contentType: req.file.mimetype })
   await fs.write(options, readStream, async (error, file) => {
     if (error) {
-      res.status(500).send({'error': 'could not chunk file'})
+      res.status(500).send({ error: 'could not chunk file' })
     }
     console.log('wrote file with id: ' + file._id)
     // add the field downloads to file and chunks; add timestamp to chunk
@@ -281,9 +276,9 @@ app.post('/api/writeData', upload.single('sensor'), async (req, res) => {
     Chunk.updateMany({ files_id: file._id }, { downloads: 0, timestamp: Date.now() }).exec()
     unlink(req.file.path, (err) => {
       if (err) {
-        res.status(500).send({'error': 'could not delete tmp file'})
+        res.status(500).send({ error: 'could not delete tmp file' })
       } else {
-        res.status(200).send({'error': ''})
+        res.status(200).send({ error: '' })
       }
     })
   })
