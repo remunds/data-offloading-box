@@ -103,7 +103,7 @@ app.post('/api/registerCurrentData', async (req, res) => {
   dbIDs = dbIDs.concat(await Chunk.find({}, '_id'))
 
   if (dbIDs.length === 0) {
-    res.send(201)
+    res.sendStatus(201)
   }
 
   if (currentIDs.length === 0) {
@@ -120,8 +120,9 @@ app.post('/api/registerCurrentData', async (req, res) => {
       }
     }
     dbIDsToDownload.set(req.body.timestamp, dbIDs)
+    
+    res.sendStatus(200)
   }
-  res.sendStatus(200)
 })
 
 app.get('/api/getData', async (req, res) => {
