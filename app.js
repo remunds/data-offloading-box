@@ -120,7 +120,6 @@ app.post('/api/registerCurrentData', async (req, res) => {
       }
     }
     dbIDsToDownload.set(req.body.timestamp, dbIDs)
-    
     res.sendStatus(200)
   }
 })
