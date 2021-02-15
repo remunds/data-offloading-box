@@ -6,14 +6,14 @@ require('../app')
 
 const server = supertest.agent('http://localhost:8000')
 
+const schemas = require('../schemas')
+const Task = schemas.task
+const Image = schemas.image
+const buffer = Buffer.from('./dachs.jpg')
+
 let imageID;
 
 async function setupMongoDB() {
-  const schemas = require('../schemas')
-  const Task = schemas.task
-  const Image = schemas.image
-
-  const buffer = Buffer.from('../dachs.jpg')
   const im = new Image({ type: 'image/jpeg', data: buffer, label: [], takenBy: "box" })
   imageID = (await im.save()).id;
   console.log("id: " + imageID)
@@ -50,6 +50,18 @@ describe('getImage by ID test', function () {
         done()
       })
   })
+
+  it('wrong ID should return json with error message', function (done) {
+    server
+      .get('/api/getImage/?id=000000')
+      .expect(400)
+      .end(function (err, res) {
+        should.not.exist(err)
+        res.text.should.equal('{"error":"database error"}')
+        res.status.should.equal(400)
+        done()
+      })
+  })
 })
 
 describe('/putLabel test', function () {
@@ -59,7 +71,140 @@ describe('/putLabel test', function () {
       .send({ id: imageID, label: 2 })
       .expect(200)
       .end(function (err, res) {
+        // response body contains all image labels
         should(res.body.pop()).equal(2)
+        done()
+      })
+  })
+
+  it('no id should throw error', function (done) {
+    server
+      .post('/api/putLabel')
+      .send({ id: "", label: 2 })
+      .expect(400)
+      .end(function (err, res) {
+        should.not.exist(err)
+        res.text.should.equal('{"error":"empty input parameter"}')
+        res.status.should.equal(400)
+        done()
+      })
+  })
+
+  it('no label should throw error', function (done) {
+    server
+      .post('/api/putLabel')
+      .send({ id: imageID, label: null })
+      .expect(400)
+      .end(function (err, res) {
+        should.not.exist(err)
+        res.text.should.equal('{"error":"empty input parameter"}')
+        res.status.should.equal(400)
+        done()
+      })
+  })
+
+  it('wrong id should throw error', function (done) {
+    server
+      .post('/api/putLabel')
+      .send({ id: "0005", label: 2 })
+      .expect(400)
+      .end(function (err, res) {
+        should.not.exist(err)
+        res.text.should.equal('{"error":"database error"}')
+        res.status.should.equal(400)
+        done()
+      })
+  })
+
+  it('non existing id should throw error', function (done) {
+    server
+      .post('/api/putLabel')
+      .send({ id: "000000000000000000000000", label: 2 })
+      .expect(400)
+      .end(function (err, res) {
+        should.not.exist(err)
+        res.text.should.equal('{"error":"could not find image in database"}')
+        res.status.should.equal(400)
+        done()
+      })
+  })
+})
+
+describe('/api/saveUserImage test', function () {
+  it('should save one image to database', function (done) {
+    this.timeout(10000);
+    var n = 0
+    Image.countDocuments({}, function(err, c) { n = c })
+
+    server
+      .post('/api/saveUserImage')
+      .field('label', 'dachs')
+      .field('takenBy', 'user')
+      .attach('data', './dachs.jpg')
+      .expect(200)
+      .end(async function (err, res) {
+        should.not.exist(err)
+        await Image.countDocuments({}, function(err, c) {
+          // one more image in database than before api call
+          c.should.equal(n+1)
+        });
+        done()
+      })
+  })
+  it('no label should throw error', function (done) {
+    var n = 0
+    Image.countDocuments({}, function(err, c) { n = c })
+
+    server
+      .post('/api/saveUserImage')
+      .field('takenBy', 'user')
+      .attach('data', './dachs.jpg')
+      .expect(400)
+      .end(async function (err, res) {
+        should.not.exist(err)
+        res.text.should.equal('{"error":"missing input parameter"}')
+        await Image.countDocuments({}, function(err, c) {
+          // no more images in database than before api call
+          c.should.equal(n)
+        });
+        done()
+      })
+  })
+  it('no takenBy field should throw error', function (done) {
+    var n = 0
+    Image.countDocuments({}, function(err, c) { n = c })
+
+    server
+      .post('/api/saveUserImage')
+      .field('label', 'dachs')
+      .attach('data', './dachs.jpg')
+      .expect(400)
+      .end(async function (err, res) {
+        should.not.exist(err)
+        res.text.should.equal('{"error":"missing input parameter"}')
+        await Image.countDocuments({}, function(err, c) {
+          // no more images in database than before api call
+          c.should.equal(n)
+        });
+        done()
+      })
+  })
+  it('no attached file should throw error', function (done) {
+    var n = 0
+    Image.countDocuments({}, function(err, c) { n = c })
+
+    server
+      .post('/api/saveUserImage')
+      .field('label', 'dachs')
+      .field('takenBy', 'user')
+      .expect(400)
+      .end(async function (err, res) {
+        should.not.exist(err)
+        res.text.should.equal('{"error":"missing file"}')
+        await Image.countDocuments({}, function(err, c) {
+          // one more image in database than before api call
+          c.should.equal(n)
+        });
         done()
       })
   })
