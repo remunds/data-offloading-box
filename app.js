@@ -233,13 +233,12 @@ app.post('/api/putLabel', (req, res) => {
 })
 
 app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
-
-  if(!req.body.takenBy || !req.body.label) {
+  if (!req.body.takenBy || !req.body.label) {
     res.status(400).send({ error: 'missing input parameter' })
     return
   }
 
-  if(!req.file) {
+  if (!req.file) {
     res.status(400).send({ error: 'missing file' })
     return
   }
