@@ -219,7 +219,10 @@ app.post('/api/putLabel', (req, res) => {
     return
   }
 
-  Image.findByIdAndUpdate(req.body.id, { $push: { label: req.body.label } }, { new: true, useFindAndModify: false }, (err, result) => {
+  // parse labels
+  labelList = req.body.label.split(",").map((val) => { return trim(val) })
+
+  Image.findByIdAndUpdate(req.body.id, { $push: { label: {$each : labelList} } }, { new: true, useFindAndModify: false }, (err, result) => {
     if (err) {
       res.status(400).send({ error: 'database error' })
       return
@@ -243,11 +246,14 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
     return
   }
 
+  // parse labels
+  labelList = req.body.label.split(",").map((val) => { return trim(val) })
+
   const img = new Image({
     type: 'image/jpeg',
     data: Buffer.from(readFileSync(req.file.path), 'base64'),
     takenBy: req.body.takenBy,
-    label: req.body.label
+    label: labelList
   })
   unlink(req.file.path, (err) => {
     if (err) {
