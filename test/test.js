@@ -68,11 +68,11 @@ describe('/putLabel test', function () {
   it('should add label to array in database', function (done) {
     server
       .post('/api/putLabel')
-      .send({ id: imageID, label: 2 })
+      .send({ id: imageID, label: "2" })
       .expect(200)
       .end(function (err, res) {
         // response body contains all image labels
-        should(res.body.pop()).equal(2)
+        should(res.body.pop()).equal("2")
         done()
       })
   })
@@ -80,7 +80,7 @@ describe('/putLabel test', function () {
   it('no id should throw error', function (done) {
     server
       .post('/api/putLabel')
-      .send({ id: "", label: 2 })
+      .send({ id: "", label: "2" })
       .expect(400)
       .end(function (err, res) {
         should.not.exist(err)
@@ -106,7 +106,7 @@ describe('/putLabel test', function () {
   it('wrong id should throw error', function (done) {
     server
       .post('/api/putLabel')
-      .send({ id: "0005", label: 2 })
+      .send({ id: "0005", label: "2" })
       .expect(400)
       .end(function (err, res) {
         should.not.exist(err)
@@ -119,7 +119,7 @@ describe('/putLabel test', function () {
   it('non existing id should throw error', function (done) {
     server
       .post('/api/putLabel')
-      .send({ id: "000000000000000000000000", label: 2 })
+      .send({ id: "000000000000000000000000", label: "2" })
       .expect(400)
       .end(function (err, res) {
         should.not.exist(err)
