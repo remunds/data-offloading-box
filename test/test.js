@@ -77,6 +77,19 @@ describe('/putLabel test', function () {
       })
   })
 
+  it('should add two labels to array in database', function (done) {
+    server
+      .post('/api/putLabel')
+      .send({ id: imageID, label: "2,   label with whitespace   " })
+      .expect(200)
+      .end(function (err, res) {
+        // response body contains all image labels
+        should(res.body.pop()).equal("label with whitespace")
+        should(res.body.pop()).equal("2")
+        done()
+      })
+  })
+
   it('no id should throw error', function (done) {
     server
       .post('/api/putLabel')
@@ -132,13 +145,12 @@ describe('/putLabel test', function () {
 
 describe('/api/saveUserImage test', function () {
   it('should save one image to database', function (done) {
-    this.timeout(10000);
     var n = 0
     Image.countDocuments({}, function(err, c) { n = c })
 
     server
       .post('/api/saveUserImage')
-      .field('label', 'dachs')
+      .field('label', 'dachs, fuchs')
       .field('takenBy', 'user')
       .attach('data', './dachs.jpg')
       .expect(200)
