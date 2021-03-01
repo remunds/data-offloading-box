@@ -258,7 +258,8 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
     type: 'image/jpeg',
     data: Buffer.from(readFileSync(req.file.path), 'base64'),
     takenBy: req.body.takenBy,
-    label: labelList
+    label: labelList,
+    luxValue: req.body.luxValue
   })
   unlink(req.file.path, (err) => {
     if (err) {

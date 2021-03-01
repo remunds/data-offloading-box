@@ -12,7 +12,8 @@ const imageSchema = new mongoose.Schema({
   type: String,
   data: Buffer,
   takenBy: String,
-  label: []
+  label: [],
+  luxValue: Number
 })
 
 const chunkSchema = new mongoose.Schema({
