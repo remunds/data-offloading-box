@@ -195,13 +195,8 @@ app.post('/api/putLabel', (req, res) => {
 
   // parse labels
   const labelList = req.body.label.toString().split(',').map((val) => { return val.trim() })
-<<<<<<< HEAD
   // $push operation adds all elements of labelList array to label array in database
-  Image.findByIdAndUpdate(req.body.id, { $push: { label: { $each: labelList } } }, { new: true, useFindAndModify: false }, (err, result) => {
-=======
-
-  Image.findByIdAndUpdate(req.body.id, { $push: { label: { $each: labelList } }, $inc: {people: 1} }, { new: true, useFindAndModify: false }, (err, result) => {
->>>>>>> 904f87c (image chunking)
+  Image.findByIdAndUpdate(req.body.id, { $push: { label: { $each: labelList } }, $inc: { people: 1 } }, { new: true, useFindAndModify: false }, (err, result) => {
     if (err) {
       res.status(400).send({ error: 'database error' })
       return
@@ -214,18 +209,18 @@ app.post('/api/putLabel', (req, res) => {
   })
 
   // check for people
-  var maxPeople = 5
+  const maxPeople = 5
   Image.findById(req.body.id, async (err, image) => {
     if (err) {
       consolge.log({ error: 'database error' })
     } else if (image == null) {
       consolge.log({ error: 'could not find image in database' })
     } else {
-      if(image.people >= maxPeople) {
+      if (image.people >= maxPeople) {
         const fs = createModel({
           modelName: 'fs'
         })
-      
+
         // write file to db
         const readStream = Buffer.from(image)
         const options = ({ filename: req.body.id, contentType: 'labelledPicture' })
@@ -237,7 +232,7 @@ app.post('/api/putLabel', (req, res) => {
             // add the field downloads to file and chunks; add timestamp to chunk
             File.findByIdAndUpdate(file._id, { downloads: 0 }).exec()
             Chunk.updateMany({ files_id: file._id }, { downloads: 0, timestamp: Date.now() }).exec()
-            Image.deleteOne({id: req.body.id})
+            Image.deleteOne({ id: req.body.id })
           }
         })
       }
@@ -279,15 +274,13 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
       res.status(500).send({ error: 'temp file could not be deleted' })
     } else {
       console.log('user image saved to db')
-      res.sendStatus(200)
     }
   })
   // save image to database
   img.save()
     .then((err, saved) => {
       if (err) {
-        res.sendStatus(500)
-        res.send({ error: 'image could not be saved to database' })
+        res.status(500).send({ error: 'image could not be saved to database' })
       } else {
         console.log('user image saved to db')
         res.sendStatus(200)
