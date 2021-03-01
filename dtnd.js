@@ -96,7 +96,7 @@ function listenForDeletionInstructions () {
   try {
     registerDtnd()
   } catch (err) {
-    console.log("cannot connect to dtnd server")
+    console.log('cannot connect to dtnd server')
     return
   }
   executeDeletion()
