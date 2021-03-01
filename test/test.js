@@ -221,3 +221,48 @@ describe('/api/saveUserImage test', function () {
       })
   })
 })
+
+
+describe('/registerCurrentData test', function () {
+  it('should register all ids from device to a map of arrays where key is a unique device id and value an array of its ids', function (done) {
+    server
+      .post('/api/registerCurrentData')
+      .send({ timestamp: '00000000', idList: [] })
+      .end(function (err, res) {
+        res.status.should.equal(201)
+        done()
+      })
+  })
+})
+
+describe('/getTasks test', function () {
+  it('get all tasks on sensorbox', function (done) {
+    server
+      .get('/api/getTasks')
+      .end(function (err, res) {
+        res.status.should.equal(200)
+        done()
+      })
+  })
+})
+
+describe('/deleteTasks test', function () {
+  it('delete specific task', function (done) {
+    server
+      .post('/api/DeleteTask')
+      .end(function (err, res) {
+        res.status.should.equal(200)
+        done()
+      })
+  })
+
+  it('should return a error when a task is given which is not in db', function (done) {
+    server
+      .post('/api/DeleteTask')
+      .send({_id: 0, title: "TestTask", descpription: "TestDescription", imageId: null})
+      .end(function (err, res) {
+        res.status.should.equal(400)
+        done()
+      })
+  })
+})
