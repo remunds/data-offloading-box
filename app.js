@@ -195,8 +195,13 @@ app.post('/api/putLabel', (req, res) => {
 
   // parse labels
   const labelList = req.body.label.toString().split(',').map((val) => { return val.trim() })
+<<<<<<< HEAD
   // $push operation adds all elements of labelList array to label array in database
   Image.findByIdAndUpdate(req.body.id, { $push: { label: { $each: labelList } } }, { new: true, useFindAndModify: false }, (err, result) => {
+=======
+
+  Image.findByIdAndUpdate(req.body.id, { $push: { label: { $each: labelList } }, $inc: {people: 1} }, { new: true, useFindAndModify: false }, (err, result) => {
+>>>>>>> 904f87c (image chunking)
     if (err) {
       res.status(400).send({ error: 'database error' })
       return
@@ -205,6 +210,37 @@ app.post('/api/putLabel', (req, res) => {
       res.status(400).send({ error: 'could not find image in database' })
     } else {
       res.send(result.label)
+    }
+  })
+
+  // check for people
+  var maxPeople = 5
+  Image.findById(req.body.id, async (err, image) => {
+    if (err) {
+      consolge.log({ error: 'database error' })
+    } else if (image == null) {
+      consolge.log({ error: 'could not find image in database' })
+    } else {
+      if(image.people >= maxPeople) {
+        const fs = createModel({
+          modelName: 'fs'
+        })
+      
+        // write file to db
+        const readStream = Buffer.from(image)
+        const options = ({ filename: req.body.id, contentType: 'labelledPicture' })
+        await fs.write(options, readStream, async (error, file) => {
+          if (error) {
+            console.log({ error: 'could not chunk file' })
+          } else {
+            console.log('wrote file with id: ' + file._id)
+            // add the field downloads to file and chunks; add timestamp to chunk
+            File.findByIdAndUpdate(file._id, { downloads: 0 }).exec()
+            Chunk.updateMany({ files_id: file._id }, { downloads: 0, timestamp: Date.now() }).exec()
+            Image.deleteOne({id: req.body.id})
+          }
+        })
+      }
     }
   })
 })
@@ -263,19 +299,28 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
 // Example:
 // Query: /api/writeData/
 // Body: contains file as form-data type: 'file' and name: 'sensor'
-app.post('/api/writeData', upload.single('sensor'), async (req, res) => {
+app.post('/api/writeData', async (req, res) => {
+  if (!req.files) {
+    res.status(400).send({ error: 'no file' })
+    return
+  }
+
   // create model so that our collections are called fs.files and fs.chunks
   const fs = createModel({
     modelName: 'fs'
   })
 
   // write file to db
-  console.log(req.sensor != null)
-  const readStream = createReadStream(req.file.path)
-  const options = ({ filename: req.file.originalname, contentType: req.file.mimetype })
+  const readStream = createReadStream(req.files.sensor.tempFilePath)
+  const options = ({ filename: req.files.sensor.name, contentType: req.files.sensor.mimetype })
   await fs.write(options, readStream, async (error, file) => {
-    if (error) {
-      res.status(500).send({ error: 'could not chunk file' })
+    if (!error) {
+      res.status(200).send(req.body)
+      unlinkSync(req.files.sensor.tempFilePath, (err) => {
+        if (err) {
+          console.log('something went wrong')
+        }
+      })
     }
     console.log('wrote file with id: ' + file._id)
     // add the field downloads to file and chunks; add timestamp to chunk
