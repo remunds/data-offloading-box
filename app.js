@@ -257,14 +257,10 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
   })
   unlink(req.file.path, (err) => {
     if (err) {
-<<<<<<< HEAD
       res.status(500).send({ error: 'temp file could not be deleted' })
-=======
-      res.status(500).send({ error: 'image could not be saved to database' })
     } else {
       console.log('user image saved to db')
       res.sendStatus(200)
->>>>>>> tests for getImage, saveUserImage and putLabel
     }
   })
 
