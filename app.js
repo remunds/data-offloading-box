@@ -8,18 +8,13 @@ const app = express()
 app.use(express.json())
 const port = config.backendPort
 
+// this is needed for the gridfs (the splitting of files/chunks)
+const { createReadStream, unlink, readFileSync } = require('fs')
+const { createModel } = require('mongoose-gridfs')
 const multer = require('multer')
 
-// this is needed for the gridfs (the splitting of files/chunks)
-const { createReadStream, unlinkSync, readFileSync } = require('fs')
-const { createModel } = require('mongoose-gridfs')
-/*
-const fileUpload = require('express-fileupload')
-app.use(fileUpload({
-  useTempFiles: true,
-  tempFileDir: './tmp/'
-}))
-*/
+// uploaded files are saved to the uploads directory to handle multipart data
+const upload = multer({ dest: 'uploads/' })
 
 const schemas = require('./schemas')
 const Task = schemas.task
@@ -232,9 +227,6 @@ app.post('/api/putLabel', (req, res) => {
   })
 })
 
-// uploaded files are saved to the uploads directory to handle multipart data
-const upload = multer({ dest: 'uploads/' })
-
 app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
   const img = new Image({
     type: 'image/jpeg',
@@ -242,49 +234,53 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
     takenBy: req.body.takenBy,
     label: req.body.label
   })
-
-  img.save(function (err, saved) {
+  unlink(req.file.path, (err) => {
     if (err) {
-      res.sendStatus(500).send({ error: 'image could not be saved to database' })
-    } else {
-      console.log('user image saved to db')
-      res.sendStatus(200)
+      res.status(500).send({ error: 'temp file could not be deleted' })
     }
   })
-  unlinkSync(req.file.path)
+
+  img.save()
+    .then((err, saved) => {
+      if (err) {
+        res.sendStatus(500)
+        res.send({ error: 'image could not be saved to database' })
+      } else {
+        console.log('user image saved to db')
+        res.sendStatus(200)
+      }
+    })
 })
 
 // chunks Data and writes it to DB
 // Example:
 // Query: /api/writeData/
 // Body: contains file as form-data type: 'file' and name: 'sensor'
-app.post('/api/writeData', async (req, res) => {
-  if (!req.files) {
-    res.status(400).send({ error: 'no file' })
-    return
-  }
-
+app.post('/api/writeData', upload.single('sensor'), async (req, res) => {
   // create model so that our collections are called fs.files and fs.chunks
   const fs = createModel({
     modelName: 'fs'
   })
 
   // write file to db
-  const readStream = createReadStream(req.files.sensor.tempFilePath)
-  const options = ({ filename: req.files.sensor.name, contentType: req.files.sensor.mimetype })
+  console.log(req.sensor != null)
+  const readStream = createReadStream(req.file.path)
+  const options = ({ filename: req.file.originalname, contentType: req.file.mimetype })
   await fs.write(options, readStream, async (error, file) => {
-    if (!error) {
-      res.status(200).send(req.body)
-      unlinkSync(req.files.sensor.tempFilePath, (err) => {
-        if (err) {
-          console.log('something went wrong')
-        }
-      })
+    if (error) {
+      res.status(500).send({ error: 'could not chunk file' })
     }
     console.log('wrote file with id: ' + file._id)
     // add the field downloads to file and chunks; add timestamp to chunk
     File.findByIdAndUpdate(file._id, { downloads: 0 }).exec()
     Chunk.updateMany({ files_id: file._id }, { downloads: 0, timestamp: Date.now() }).exec()
+    unlink(req.file.path, (err) => {
+      if (err) {
+        res.status(500).send({ error: 'could not delete tmp file' })
+      } else {
+        res.status(200).send({ error: '' })
+      }
+    })
   })
 })
 
@@ -294,7 +290,6 @@ const server = app.listen(port, () => {
 
 // mongoose controls our mongodb
 const mongoose = require('mongoose')
-
 mongoose.connect(`mongodb://${config.dbIp}/${boxName}`, { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true, useFindAndModify: false })
 
 const db = mongoose.connection
@@ -305,6 +300,9 @@ db.once('open', () => {
 
   const generator = require('./taskgenerator')
   generator.apply()
+
+  const dtnd = require('./dtnd.js')
+  dtnd.apply()
 })
 
 module.exports = server
