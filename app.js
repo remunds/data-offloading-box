@@ -139,6 +139,11 @@ app.get('/api/getAllData', async (req, res) => {
   console.log('Getting a chunk or file')
   const timestamp = parseInt(req.query.deviceTimestamp)
   const dbIDs = dbIDsToDownload.get(timestamp)
+
+  if (!dbIDs) {
+    res.status(400).send({ error: 'Can not find list of ids by given deviceTimestamp' })
+  }
+
   let i = 0
   while (dbIDs[i] === 'onPhone') {
     i++
