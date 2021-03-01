@@ -205,7 +205,7 @@ app.get('/api/getImage', (req, res) => {
   Image.findById(req.query.id, (err, image) => {
     if (err) {
       res.status(400).send({ error: 'database error' })
-    } else if (image == null) {
+    } else if (!image) {
       res.status(400).send({ error: 'could not find image in database' })
     } else {
       res.send(image)
@@ -214,12 +214,20 @@ app.get('/api/getImage', (req, res) => {
 })
 
 app.post('/api/putLabel', (req, res) => {
-  // post query, q.id = x; q.label = y if url ends with ?id=x&?label=y
-  Image.findByIdAndUpdate(req.body.id, { $push: { label: req.body.label } }, { new: true, useFindAndModify: false }, (err, result) => {
+  if (!req.body.label || !req.body.id) {
+    res.status(400).send({ error: 'empty input parameter' })
+    return
+  }
+
+  // parse labels
+  const labelList = req.body.label.toString().split(',').map((val) => { return val.trim() })
+
+  Image.findByIdAndUpdate(req.body.id, { $push: { label: { $each: labelList } } }, { new: true, useFindAndModify: false }, (err, result) => {
     if (err) {
       res.status(400).send({ error: 'database error' })
+      return
     }
-    if (result == null) {
+    if (!result) {
       res.status(400).send({ error: 'could not find image in database' })
     } else {
       res.send(result.label)
@@ -228,15 +236,31 @@ app.post('/api/putLabel', (req, res) => {
 })
 
 app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
+  if (!req.body.takenBy || !req.body.label) {
+    res.status(400).send({ error: 'missing input parameter' })
+    return
+  }
+
+  if (!req.file) {
+    res.status(400).send({ error: 'missing file' })
+    return
+  }
+
+  // parse labels
+  const labelList = req.body.label.toString().split(',').map((val) => { return val.trim() })
+
   const img = new Image({
     type: 'image/jpeg',
     data: Buffer.from(readFileSync(req.file.path), 'base64'),
     takenBy: req.body.takenBy,
-    label: req.body.label
+    label: labelList
   })
   unlink(req.file.path, (err) => {
     if (err) {
       res.status(500).send({ error: 'temp file could not be deleted' })
+    } else {
+      console.log('user image saved to db')
+      res.sendStatus(200)
     }
   })
 
