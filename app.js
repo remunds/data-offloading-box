@@ -212,9 +212,9 @@ app.post('/api/putLabel', (req, res) => {
   const maxPeople = 5
   Image.findById(req.body.id, async (err, image) => {
     if (err) {
-      consolge.log({ error: 'database error' })
+      console.log({ error: 'database error' })
     } else if (image == null) {
-      consolge.log({ error: 'could not find image in database' })
+      console.log({ error: 'could not find image in database' })
     } else {
       if (image.people >= maxPeople) {
         const fs = createModel({
@@ -309,7 +309,7 @@ app.post('/api/writeData', async (req, res) => {
   await fs.write(options, readStream, async (error, file) => {
     if (!error) {
       res.status(200).send(req.body)
-      unlinkSync(req.files.sensor.tempFilePath, (err) => {
+      unlink(req.files.sensor.tempFilePath, (err) => {
         if (err) {
           console.log('something went wrong')
         }
