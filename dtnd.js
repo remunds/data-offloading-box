@@ -93,7 +93,12 @@ async function executeDeletion () {
 // init function
 function listenForDeletionInstructions () {
   console.log('listen for deletion instructions')
-  registerDtnd()
+  try {
+    registerDtnd()
+  } catch (err) {
+    console.log("cannot connect to dtnd server")
+    break
+  }
   executeDeletion()
 }
 

@@ -266,7 +266,8 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
     data: Buffer.from(readFileSync(req.file.path), 'base64'),
     takenBy: req.body.takenBy,
     label: labelList,
-    luxValue: req.body.luxValue
+    luxValue: req.body.luxValue,
+    people: 0
   })
   // delete image from temporary storage
   unlink(req.file.path, (err) => {
@@ -292,28 +293,19 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
 // Example:
 // Query: /api/writeData/
 // Body: contains file as form-data type: 'file' and name: 'sensor'
-app.post('/api/writeData', async (req, res) => {
-  if (!req.files) {
-    res.status(400).send({ error: 'no file' })
-    return
-  }
-
+app.post('/api/writeData', upload.single('sensor'), async (req, res) => {
   // create model so that our collections are called fs.files and fs.chunks
   const fs = createModel({
     modelName: 'fs'
   })
 
   // write file to db
-  const readStream = createReadStream(req.files.sensor.tempFilePath)
-  const options = ({ filename: req.files.sensor.name, contentType: req.files.sensor.mimetype })
+  console.log(req.sensor != null)
+  const readStream = createReadStream(req.file.path)
+  const options = ({ filename: req.file.originalname, contentType: req.file.mimetype })
   await fs.write(options, readStream, async (error, file) => {
-    if (!error) {
-      res.status(200).send(req.body)
-      unlink(req.files.sensor.tempFilePath, (err) => {
-        if (err) {
-          console.log('something went wrong')
-        }
-      })
+    if (error) {
+      res.status(500).send({ error: 'could not chunk file' })
     }
     console.log('wrote file with id: ' + file._id)
     // add the field downloads to file and chunks; add timestamp to chunk
