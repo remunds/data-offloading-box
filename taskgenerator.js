@@ -2,10 +2,14 @@ const schemas = require('./schemas')
 const Task = schemas.task
 const Image = schemas.image
 
+/* sets process to sleep so that no more tasks will be generated for a while
+*/
 function sleep (milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
+/* inserts a task into database every timeinMs milliseconds
+*/
 async function insertTaskPeriodic (task, timeInMs) {
   while (true) {
     // find task in db
@@ -21,6 +25,8 @@ async function insertTaskPeriodic (task, timeInMs) {
   }
 }
 
+/* inserts an imageLabel task into database every hour
+*/
 async function createLabelImageTasksHourly () {
   while (true) {
     // search for all images in DB
@@ -30,6 +36,7 @@ async function createLabelImageTasksHourly () {
         // create new Task for every found image
         images.forEach(image => {
           let imageTask
+          // distinguish between tasks for labelling Box images and user images
           if (image.takenBy === 'user') {
             imageTask = new Task({ title: 'Nutzerbild beschriften', description: 'Bitte wähle das passende Label aus.', imageId: image.id })
           } else {
@@ -54,6 +61,8 @@ async function createLabelImageTasksHourly () {
   }
 }
 
+/* function for creating tasks and periodically inserting them into the database
+*/
 function generateTasks () {
   console.log('generating tasks')
 
