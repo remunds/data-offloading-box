@@ -18,8 +18,8 @@ cd data-offloading-box
 nano config_default.json
 ```
 Then edit your specific details, such as Back-End IP, Back-End Port, db IP, db Port, dtnd IP and dtnd Port.
-In a normal use case, you just have to adjust the Back-End IP to a static and globally available IP address, leading to your this Back-End server. (TODO)
-Do not change "configuration" and "nodeName"
+In a normal use case, you only have to adjust the Back-End IP to a static and globally available IP address, leading to your Back-End server.
+Do not change "configuration" and "nodeName".
 
 
 ```
@@ -36,13 +36,13 @@ sudo systemctl status dtnd.service
 sudo systemctl status mongod.service
 ```
 
-#### terminate the process
+#### Terminate the process
 ```
 sudo systemctl stop offloading.service
 sudo systemctl stop dtnd.service
 ```
 
-#### start again
+#### Start again
 ```
 ./start.sh
 ```
@@ -69,11 +69,11 @@ app.get('/api/register', (req, res) => {
 
 `app.js`
 
-For more detail visit the [node.js](https://nodejs.org/en/docs/) and [express.js](http://expressjs.com/en/5x/api.html) documentation
+For more detail visit the [node.js](https://nodejs.org/en/docs/) and [express.js](http://expressjs.com/en/5x/api.html) documentation.
 
 ### Add Data to Database
 
-We are using MongoDB as a NoSQL Database in combination with Mongoose to structure our data. You have to add your schema in `schema.js`
+We are using MongoDB as a NoSQL Database in combination with Mongoose to structure our data. You have to add your schema in `schema.js`.
 
 ```js
 const imageSchema = new mongoose.Schema({
@@ -95,16 +95,16 @@ Be aware that all data that should be transfered to the Back-End has to be chunk
 
 ### Add new Tasks
 
-If you want to add new tasks, you just have to modify the `function generateTasks()` method in `/taskgenerator.js`. 
-And for more complex Tasks with the need to provide data to the user, you can write your own task generator function that inserts the needed data into a new Collection of the database. Therefore you must add a new schema in the `schema.js`.  
+If you want to add new tasks, you have to modify the `function generateTasks()` method in `/taskgenerator.js`. 
+For more complex Tasks with more than just text fields (for example image data for image tasks), you can write your own task generator function that inserts the needed data into a new Collection of the database. Therefore you must add a new schema in the `schema.js`. The structure of the Task schema should then also be extended with a field pointing to the correct database entry (for example a field for imageId).
 
-To receive any data from the user, you need to edit your routes. Depending on whether you want other user to interact with that data, you choose to edit the Back-End or box routes. Be aware that all data that should be transfered to the Back-End has to be chunked via [gridFS](https://www.npmjs.com/package/mongoose-gridfs) first!
+To receive any data from the user, you need to edit your routes. Depending on whether you want other users to interact with that data, you choose to edit the Back-End or box routes. Be aware that all data that should be transfered to the Back-End has to be chunked via [gridFS](https://www.npmjs.com/package/mongoose-gridfs) first!
 
-Additionally, you have to modify the app to handle to new Tasks right. For more information have a look to the [data-offloading-app GitHub page](https://github.com/dtn7/dtn7-go). 
+Additionally, you have to modify the app to handle new Tasks in the desired way. For more information have a look at the [data-offloading-app GitHub page](https://github.com/dtn7/dtn7-go). 
 
 #### Simple Task
 
-For example you want to add a light measurement task to measure the light with the built-in light meter.
+For example if you want to add a light measurement task to measure the light with the built-in light meter:
 
 ```js
 function generateTasks () {
@@ -113,7 +113,7 @@ function generateTasks () {
   // add new Task
   const TreePhotoTask = new Task({ title: 'Baumkronen Foto', description: 'Bitte nehme ein Foto der Baumkrone auf.' })
   const CleanTask = new Task({ title: 'Box säubern', description: 'Bitte entferne Äste und Schmutz von der Oberfläche der Sensorbox.' })
-  const MeasureLight = new Task({ title: 'Helligkeit messen', description: 'Bitte messe die Helligkeit bei der Sensorbox mit deinem Lichtsensor am Handy'})
+  const MeasureLightTask = new Task({ title: 'Helligkeit messen', description: 'Bitte messe die Helligkeit bei der Sensorbox mit dem Lichtsensor am Handy.'})
 
   // insert every day (24 hours)
   insertTaskPeriodic(TreePhotoTask, 24 * 60 * 1000)
@@ -121,8 +121,8 @@ function generateTasks () {
   // insert every 3 days (3 * 24 hours)
   insertTaskPeriodic(CleanTask, 3 * 24 * 60 * 1000)
 
-  // insert every houer
-  insertTaskPeriodic(MeasureLight, 60 * 1000)
+  // insert every hour
+  insertTaskPeriodic(MeasureLightTask, 60 * 1000)
     
   [...]
 } 
@@ -132,7 +132,7 @@ function generateTasks () {
 
 #### Complex Task
 
-Here is a task to create a task to label the content of an image shot by other users.
+Here is a function to create a task for each image in the database.
 
 ```js
 async function createLabelImageTasksHourly () {
@@ -143,7 +143,7 @@ async function createLabelImageTasksHourly () {
       else if (images != null) {
         // create new Task for every found image
         images.forEach(image => {
-          const imageTask = new Task({ title: 'Fotofallen-Bild beschriften', description: 'Bitte waehle das passende Label aus.', imageId: image.id })
+          const imageTask = new Task({ title: 'Bild beschriften', description: 'Bitte wähle das passende Label aus.', imageId: image.id })
           // check if task already exists in DB
           Task.findOne({ imageId: imageTask.imageId }, (err, doc) => {
             if (err) return console.error(err)
