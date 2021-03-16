@@ -1,6 +1,6 @@
 # About this project
 
-In support of the [Nature 4.0 project](www.nature40.org) an app was developed for collecting nature data and making them available to researchers. 
+In support of the [Nature 4.0 project](https://www.uni-marburg.de/de/fb19/natur40) an app was developed for collecting nature data and making them available to researchers. 
 
 This repository is for deployment on a sensorbox.
 
