@@ -6,11 +6,11 @@ Conservation strategies require the observation and assessment of landscape. Exp
 1. (tested on) Raspberry Pi 4 B, at least 4GB RAM recommended
 2. [Raspios 64 bit](https://downloads.raspberrypi.org/raspios_arm64/images/) (raspios_arm64-2020-08-24 and higher)
 3. User named "pi"
-4. running and configured Back-End server
+4. running and configured backend server
 
 ## Installation
 ### Configure
-1. Download repository via GitHub
+1. Download repository via GitHub.
 
 ```bash
 cd /home/pi/
@@ -20,17 +20,17 @@ nano config_default.json
 ```
 2. Then edit your specific details, such as 
 
-   1. Back-End IP, 
-   2. Back-End port, 
+   1. backend IP, 
+   2. backend port, 
    3. db IP, 
    4. db port, 
    5. dtnd IP and 
    6. dtnd port.
 
-   In a normal use case, you only have to adjust the Back-End IP to a static and globally available IP address, leading to your Back-End server.
+   In a normal use case, you only have to adjust the backend IP to a static and globally available IP address, leading to your backend server.
    **Do not change "configuration" and "nodeName". **
 
-   **Make sure, that the Back-End server is already set up, online and reachable from your network, before executing the following steps. Otherwise your Sensorbox will not be able to receive its unique ID and the correct configuration as well as the correct functionality can not be assured.**
+   **Make sure, that the backend server is already set up, online and reachable from your network, before executing the following steps. Otherwise your Sensorbox will not be able to receive its unique ID and the correct configuration as well as the correct functionality cannot be assured.**
 
 
 ```bash
@@ -69,7 +69,7 @@ sudo systemctl start offloading.service
 
 ### Add new Routes
 
-Modify `app.js` as you wish. Be aware that all data that should be transfered to the Back-End has to be chunked via [gridFS](https://www.npmjs.com/package/mongoose-gridfs) first!
+Modify `app.js` as you wish. Be aware that all data that should be transferred to the backend has to be chunked via [gridFS](https://www.npmjs.com/package/mongoose-gridfs) first!
 
 For example:
 
@@ -103,14 +103,14 @@ module.exports.image = mongoose.model('Image', imageSchema)
 
 Please visit the [Mongoose Documentation](https://mongoosejs.com/) for more details.
 
-Be aware that all data that should be transfered to the Back-End has to be chunked via [gridFS](https://www.npmjs.com/package/mongoose-gridfs) first!
+Be aware that all data that should be transferred to the backend has to be chunked via [gridFS](https://www.npmjs.com/package/mongoose-gridfs) first!
 
 ### Add new Tasks
 
 If you want to add new tasks, you have to modify the `function generateTasks()` method in `/taskgenerator.js`. 
 For more complex Tasks with more than just text fields (for example image data for image tasks), you can write your own task generator function that inserts the needed data into a new Collection of the database. Therefore you must add a new schema in the `schema.js`. The structure of the Task schema should then also be extended with a field pointing to the correct database entry (for example a field for imageId).
 
-To receive any data from the user, you need to edit your routes. Depending on whether you want other users to interact with that data, you choose to edit the Back-End or box routes. Be aware that all data that should be transfered to the Back-End has to be chunked via [gridFS](https://www.npmjs.com/package/mongoose-gridfs) first!
+To receive any data from the user, you need to edit your routes. Depending on whether you want other users to interact with that data, you choose to edit the backend or box routes. Be aware that all data that should be transferred to the backend has to be chunked via [gridFS](https://www.npmjs.com/package/mongoose-gridfs) first!
 
 Additionally, you have to modify the app to handle new Tasks in the desired way. For more information have a look at the [data-offloading-app GitHub page](https://github.com/dtn7/dtn7-go). 
 
