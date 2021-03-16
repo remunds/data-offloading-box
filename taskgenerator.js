@@ -29,7 +29,13 @@ async function createLabelImageTasksHourly () {
       else if (images != null) {
         // create new Task for every found image
         images.forEach(image => {
-          const imageTask = new Task({ title: 'Fotofallen-Bild beschriften', description: 'Bitte waehle das passende Label aus.', imageId: image.id })
+          let imageTask
+          if (image.takenBy === 'user') {
+            imageTask = new Task({ title: 'Nutzerbild beschriften', description: 'Bitte wähle das passende Label aus.', imageId: image.id })
+          } else {
+            imageTask = new Task({ title: 'Fotofallen-Bild beschriften', description: 'Bitte wähle das passende Label aus.', imageId: image.id })
+          }
+
           // check if task already exists in DB
           Task.findOne({ imageId: imageTask.imageId }, (err, doc) => {
             if (err) return console.error(err)
