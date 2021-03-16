@@ -1,6 +1,8 @@
-# Nature 4.0
+# About this project
 
-Conservation strategies require the observation and assessment of landscape. Expert surveys must make trade-offs here between level of detail, spatial coverage, and temporal repetition, which are only partially resolved even by resorting to airborne or satellite-based remote sensing approaches. This limits differentiated conservation planning and response options.
+In support of the [Nature 4.0 project](https://www.uni-marburg.de/de/fb19/natur40) an app was developed for collecting nature data and making them available to researchers. 
+
+This repository is for deployment on a sensorbox.
 
 # Getting Started
 
