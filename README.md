@@ -6,48 +6,60 @@ Conservation strategies require the observation and assessment of landscape. Exp
 1. (tested on) Raspberry Pi 4 B, at least 4GB RAM recommended
 2. [Raspios 64 bit](https://downloads.raspberrypi.org/raspios_arm64/images/) (raspios_arm64-2020-08-24 and higher)
 3. User named "pi"
+4. running and configured Back-End server
 
 ## Installation
 ### Configure
-`Download` repository via github
+1. Download repository via GitHub
 
-```
+```bash
 cd /home/pi/
 git clone https://github.com/remunds/data-offloading-box.git
 cd data-offloading-box
 nano config_default.json
 ```
-Then edit your specific details, such as Back-End IP, Back-End port, db IP, db port, dtnd IP and dtnd port.
-In a normal use case, you only have to adjust the Back-End IP to a static and globally available IP address, leading to your Back-End server.
-Do not change "configuration" and "nodeName".
+2. Then edit your specific details, such as 
+
+   1. Back-End IP, 
+   2. Back-End port, 
+   3. db IP, 
+   4. db port, 
+   5. dtnd IP and 
+   6. dtnd port.
+
+   In a normal use case, you only have to adjust the Back-End IP to a static and globally available IP address, leading to your Back-End server.
+   **Do not change "configuration" and "nodeName". **
+
+   **Make sure, that the Back-End server is already set up, online and reachable from your network, before executing the following steps. Otherwise your Sensorbox will not be able to receive its unique ID and the correct configuration as well as the correct functionality can not be assured.**
 
 
-```
+```bash
 ./setup.sh
 sudo mv dtnd.service /lib/systemd/system/
 sudo mv offloading.service /lib/systemd/system/ 
-./start.sh
+sudo ./start.sh
 ```
-Now the box server should run in background and should start itself automatically after a restart or a crash.
+3. Now the box server should run in background and should start itself automatically after a restart or a crash.
+
 #### For debugging purposes, you can run
-```
+```bash
 sudo systemctl status offloading.service
 sudo systemctl status dtnd.service
 sudo systemctl status mongod.service
 ```
 
 #### and terminate the process via
-```
+```bash
 sudo systemctl stop offloading.service
 sudo systemctl stop dtnd.service
 ```
 
 #### or start again via
-```
-./start.sh
+```bash
+sudo ./start.sh
 ```
 or
-```
+```bash
 sudo systemctl start dtnd.service
 sudo systemctl start mongod.service
 sudo systemctl start offloading.service
@@ -174,7 +186,7 @@ function generateTasks () {
 
 `/taskgenerator.js`
 
-## dtnd
+## dtn7-go
 dtnd is a delay-tolerant networking daemon. It represents a node inside the network and is able to transmit, receive and forward bundles to other nodes. A node's neighbors may be specified in the configuration or detected within the local network through a peer discovery. Bundles might be sent and received through a REST-like web interface. The features and their configuration is described inside the provided example configuration.toml.
 
 https://github.com/dtn7/dtn7-go
