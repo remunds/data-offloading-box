@@ -4,7 +4,7 @@ const Chunk = schemas.chunk
 const File = schemas.file
 
 const config = require('./config.json')
-let dtndUuid
+var dtndUuid = false
 
 // sleep function
 function sleep (milliseconds) {
@@ -67,7 +67,7 @@ function fetch () {
 
 // deletes chunks and files that are transmitted to backend
 async function executeDeletion () {
-  while (true) {
+  while (dtndUuid) {
     const collection = await fetch()
     if (collection) {
       for (const message of collection.messages) {
@@ -93,12 +93,8 @@ async function executeDeletion () {
 // init function
 function listenForDeletionInstructions () {
   console.log('listen for deletion instructions')
-  try {
-    registerDtnd()
-  } catch (err) {
-    console.log('cannot connect to dtnd server')
-    return
-  }
+  
+  registerDtnd()
   executeDeletion()
 }
 
