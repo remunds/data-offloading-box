@@ -17,7 +17,7 @@ git clone https://github.com/remunds/data-offloading-box.git
 cd data-offloading-box
 nano config_default.json
 ```
-Then edit your specific details, such as Back-End IP, Back-End Port, db IP, db Port, dtnd IP and dtnd Port.
+Then edit your specific details, such as Back-End IP, Back-End port, db IP, db port, dtnd IP and dtnd port.
 In a normal use case, you only have to adjust the Back-End IP to a static and globally available IP address, leading to your Back-End server.
 Do not change "configuration" and "nodeName".
 
@@ -28,7 +28,7 @@ sudo mv dtnd.service /lib/systemd/system/
 sudo mv offloading.service /lib/systemd/system/ 
 ./start.sh
 ```
-Now the box server should run in background and should start itself automatically after restart or crash.
+Now the box server should run in background and should start itself automatically after a restart or a crash.
 #### For debugging purposes, you can run
 ```
 sudo systemctl status offloading.service
@@ -36,13 +36,13 @@ sudo systemctl status dtnd.service
 sudo systemctl status mongod.service
 ```
 
-#### Terminate the process
+#### and terminate the process via
 ```
 sudo systemctl stop offloading.service
 sudo systemctl stop dtnd.service
 ```
 
-#### Start again
+#### or start again via
 ```
 ./start.sh
 ```
