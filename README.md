@@ -6,7 +6,7 @@ Conservation strategies require the observation and assessment of landscape. Exp
 1. (tested on) Raspberry Pi 4 B, at least 4GB RAM recommended
 2. [Raspios 64 bit](https://downloads.raspberrypi.org/raspios_arm64/images/) (raspios_arm64-2020-08-24 and higher)
 3. User named "pi"
-4. running and configured backend server
+4. running and configured [backend server](https://github.com/remunds/data-offloading-backend)
 
 ## Installation
 ### Configure
@@ -30,7 +30,7 @@ nano config_default.json
    In a normal use case, you only have to adjust the backend IP to a static and globally available IP address, leading to your backend server.
    **Do not change "configuration" and "nodeName". **
 
-   **Make sure, that the backend server is already set up, online and reachable from your network, before executing the following steps. Otherwise your Sensorbox will not be able to receive its unique ID and the correct configuration as well as the correct functionality cannot be assured.**
+   **Make sure that the backend server is already set up, online and reachable from your network, before executing the following steps. Otherwise, your Sensorbox will not be able to receive its unique ID and the correct configuration, resulting in a non-functional installation.**
 
 
 ```bash
@@ -112,7 +112,7 @@ For more complex Tasks with more than just text fields (for example image data f
 
 To receive any data from the user, you need to edit your routes. Depending on whether you want other users to interact with that data, you choose to edit the backend or box routes. Be aware that all data that should be transferred to the backend has to be chunked via [gridFS](https://www.npmjs.com/package/mongoose-gridfs) first!
 
-Additionally, you have to modify the app to handle new Tasks in the desired way. For more information have a look at the [data-offloading-app GitHub page](https://github.com/dtn7/dtn7-go). 
+Additionally, you have to modify the app to handle new Tasks in the desired way. For more information have a look at the [data-offloading-app GitHub page](https://github.com/remunds/data-offloading-app). 
 
 #### Simple Task
 
