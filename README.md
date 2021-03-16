@@ -1,15 +1,20 @@
 # Nature 4.0
+
 Conservation strategies require the observation and assessment of landscape. Expert surveys must make trade-offs here between level of detail, spatial coverage, and temporal repetition, which are only partially resolved even by resorting to airborne or satellite-based remote sensing approaches. This limits differentiated conservation planning and response options.
 
 # Getting Started
+
 ## Requirements
+
 1. (tested on) Raspberry Pi 4 B, at least 4GB RAM recommended
-2. [Raspios 64 bit](https://downloads.raspberrypi.org/raspios_arm64/images/) (raspios_arm64-2020-08-24 and higher)
+2. [Raspios 64 bit](https://downloads.raspberrypi.org/raspios_arm64/images/) (raspios_arm64-2020-08-24 and higher), [headless mode](https://www.raspberrypi.org/documentation/configuration/wireless/headless.md) recommended
 3. User named "pi"
 4. running and configured [backend server](https://github.com/remunds/data-offloading-backend)
 
 ## Installation
+
 ### Configure
+
 1. Download repository via GitHub.
 
 ```bash
@@ -18,6 +23,7 @@ git clone https://github.com/remunds/data-offloading-box.git
 cd data-offloading-box
 nano config_default.json
 ```
+
 2. Then edit your specific details, such as 
 
    1. backend IP, 
@@ -27,10 +33,10 @@ nano config_default.json
    5. dtnd IP and 
    6. dtnd port.
 
-   In a normal use case, you only have to adjust the backend IP to a static and globally available IP address, leading to your backend server.
-   **Do not change "configuration" and "nodeName". **
+In a normal use case, you only have to adjust the backend IP to a static and globally available IP address, leading to your backend server.
+**Do not change "configuration" and "nodeName". **
 
-   **Make sure that the backend server is already set up, online and reachable from your network, before executing the following steps. Otherwise, your Sensorbox will not be able to receive its unique ID and the correct configuration, resulting in a non-functional installation.**
+**Make sure that the backend server is already set up, online and reachable from your network, before executing the following steps. Otherwise, your Sensorbox will not be able to receive its unique ID and the correct configuration, resulting in a non-functional installation.**
 
 
 ```bash
@@ -39,9 +45,13 @@ sudo mv dtnd.service /lib/systemd/system/
 sudo mv offloading.service /lib/systemd/system/ 
 sudo ./start.sh
 ```
+
 3. Now the box server should run in background and should start itself automatically after a restart or a crash.
 
+The Pi will be not longer reachable over WiFi after restart, because [RaspAP](https://github.com/RaspAP/raspap-webgui) is creating a WiFi hotspot. To maintain the Pi you can still connect over WiFi to SSH. 
+
 #### For debugging purposes, you can run
+
 ```bash
 sudo systemctl status offloading.service
 sudo systemctl status dtnd.service
@@ -49,16 +59,20 @@ sudo systemctl status mongod.service
 ```
 
 #### and terminate the process via
+
 ```bash
 sudo systemctl stop offloading.service
 sudo systemctl stop dtnd.service
 ```
 
 #### or start again via
+
 ```bash
 sudo ./start.sh
 ```
+
 or
+
 ```bash
 sudo systemctl start dtnd.service
 sudo systemctl start mongod.service
@@ -187,9 +201,11 @@ function generateTasks () {
 `/taskgenerator.js`
 
 ## dtn7-go
+
 dtnd is a delay-tolerant networking daemon. It represents a node inside the network and is able to transmit, receive and forward bundles to other nodes. A node's neighbors may be specified in the configuration or detected within the local network through a peer discovery. Bundles might be sent and received through a REST-like web interface. The features and their configuration is described inside the provided example configuration.toml.
 
 https://github.com/dtn7/dtn7-go
 
 # License
+
 This project's code is licensed under the GNU General Public License version 3 (GPL-3.0-or-later).
