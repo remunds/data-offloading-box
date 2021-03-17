@@ -22,13 +22,11 @@ const Image = schemas.image
 const Chunk = schemas.chunk
 const File = schemas.file
 
-const dbIDsToDownload = new Map()
-
 // gets the file or chunk with the highest priority to send next
 // returns: File or Chunk with the highest priority, or
 // if not existing: -1
 // input: bool priorityOld: true: sort by oldest date first, false: sort by newest date first
-async function getHighestPriorityFile (priorityOld) {
+async function getHighestPriorityFile (priorityOld, timestamp) {
   let highestPriority
   // find oldest and least downloaded chunk + file
   const sortBy = priorityOld ? 1 : -1
@@ -39,11 +37,11 @@ async function getHighestPriorityFile (priorityOld) {
     // only a valid file could be found
     highestPriority = priorityFile
     // count downloads up
-    File.updateOne({ _id: priorityFile.id }, { downloads: priorityFile.downloads + 1 }).exec()
+    File.updateOne({ _id: priorityFile.id }, { downloads: priorityFile.downloads + 1, $push: { onPhones: timestamp } }).exec()
   } else if (!priorityFile && priorityChunk && priorityChunk.downloads != null && priorityChunk.timestamp != null) {
     // only a valid chunk could be found
     highestPriority = priorityChunk
-    Chunk.updateOne({ _id: priorityChunk.id }, { downloads: priorityChunk.downloads + 1 }).exec()
+    Chunk.updateOne({ _id: priorityChunk.id }, { downloads: priorityChunk.downloads + 1, $push: { onPhones: timestamp } }).exec()
   } else {
     if (!priorityChunk || !priorityFile || priorityChunk.downloads == null || priorityFile.downloads == null ||
       !priorityChunk.timestamp || !priorityFile.uploadDate) {
@@ -53,21 +51,21 @@ async function getHighestPriorityFile (priorityOld) {
     if (priorityChunk.downloads > priorityFile.downloads) {
       // the file has the higher priority due to downloads
       highestPriority = priorityFile
-      File.updateOne({ _id: priorityFile.id }, { downloads: priorityFile.downloads + 1 }).exec()
+      File.updateOne({ _id: priorityFile.id }, { downloads: priorityFile.downloads + 1, $push: { onPhones: timestamp } }).exec()
     } else if (priorityChunk.downloads < priorityFile.downloads) {
       // the chunk has the higher priority due to downloads
       highestPriority = priorityChunk
-      Chunk.updateOne({ _id: priorityChunk.id }, { downloads: priorityChunk.downloads + 1 }).exec()
+      Chunk.updateOne({ _id: priorityChunk.id }, { downloads: priorityChunk.downloads + 1, $push: { onPhones: timestamp } }).exec()
     } else {
       // compare by timestamps (if all files/chunks have the same downloads)
       if ((priorityOld && priorityChunk.timestamp >= priorityFile.uploadDate) || (!priorityOld && priorityChunk.timestamp < priorityFile.uploadDate)) {
         // the file has the higher priority due to timestamp
         highestPriority = priorityFile
-        File.updateOne({ _id: priorityFile.id }, { downloads: priorityFile.downloads + 1 }).exec()
+        File.updateOne({ _id: priorityFile.id }, { downloads: priorityFile.downloads + 1, $push: { onPhones: timestamp } }).exec()
       } else {
         // the chunk has the higher priority due to timestamp
         highestPriority = priorityChunk
-        Chunk.updateOne({ _id: priorityChunk.id }, { downloads: priorityChunk.downloads + 1 }).exec()
+        Chunk.updateOne({ _id: priorityChunk.id }, { downloads: priorityChunk.downloads + 1, $push: { onPhones: timestamp } }).exec()
       }
     }
   }
@@ -78,127 +76,57 @@ async function getHighestPriorityFile (priorityOld) {
   return toReturn
 }
 
-/* /api/register registers a device prior to data download
-  response contains boxName so that device knows id of sensor box
-  the device needs this id in order to communicate with this box
-  response also contains a timestamp of the current time, this is
-  used as device id assigned to the device by the sensor box
-*/
-app.get('/api/register', (req, res) => {
+// Registers devices and gives every device a unique ID.
+app.get('/api/register', async (req, res) => {
   res.send({ piId: boxName, timestamp: Date.now() })
 })
 
-/* Register all ids from devices DB to filter them out of list to download
-   as a result we get a new map entry with the device id(timestamp) as key
-   and an array with all ids that are not downloaded yet as value.
-   IDs already on phone are replaced with a "onPhone" string
-   If no data found on box the download will be cancelled */
-app.post('/api/registerCurrentData', async (req, res) => {
-  console.log('Registering Device IDs... ')
-  const currentIDs = req.body.idList
-  const timestamp = req.body.timestamp
-  console.log('DeviceID: ' + timestamp)
-  let dbIDs = []
-
-  dbIDs = await File.find({}, '_id')
-  dbIDs = dbIDs.concat(await Chunk.find({}, '_id'))
-
-  if (dbIDs.length === 0) {
-    res.sendStatus(201)
-  }
-
-  if (currentIDs.length === 0) {
-    dbIDsToDownload.set(req.body.timestamp, dbIDs)
-  } else {
-    let i
-    let j
-
-    for (i = 0; i < dbIDs.length; i++) {
-      for (j = 0; j < currentIDs.length; j++) {
-        if (dbIDs[i].id === currentIDs[j]) {
-          dbIDs[i] = 'onPhone'
-        }
-      }
-    }
-    dbIDsToDownload.set(req.body.timestamp, dbIDs)
-    res.sendStatus(200)
-  }
-})
-
-/* /api/getData request body contains field "data"
-  if value of this field is old, then send oldest file on box
-  if value is new, send newest file on box
-  response contains corresponding file
-*/
 app.get('/api/getData', async (req, res) => {
+  const timestamp = parseInt(req.query.deviceTimestamp)
   let fileToSend
   // the query data determines which priority we have: newest or oldest first.
   const priority = req.query.data
   if (priority === 'old') {
-    fileToSend = await getHighestPriorityFile(true)
+    fileToSend = await getHighestPriorityFile(true, timestamp)
   } else if (priority === 'new') {
-    fileToSend = await getHighestPriorityFile(false)
+    fileToSend = await getHighestPriorityFile(false, timestamp)
   } else {
     res.status(400).send({ error: 'query needs to be data=old or new' })
   }
   res.status(200).send(fileToSend)
 })
 
-/* Every time we call /api/getAllData the first id contained in the
-  dbIDsToDownload map will be searched in db and sent to the device.
-  After that the id will be replaced with "onPhone"
-  since it's no longer needed.
-  */
+/* Every time we call /api/getAllData the first chunk whose timestamp is not contained in the db
+ will be sent to the device. After that the timestamp will be saved */
 app.get('/api/getAllData', async (req, res) => {
-  console.log('Getting a chunk or file')
   const timestamp = parseInt(req.query.deviceTimestamp)
-  const dbIDs = dbIDsToDownload.get(timestamp)
-
-  if (!dbIDs) {
-    res.status(400).send({ error: 'Can not find list of ids by given deviceTimestamp' })
-  }
-
-  let i = 0
-  while (dbIDs[i] === 'onPhone') {
-    i++
-  }
-  if (i === dbIDs.length) {
-    res.sendStatus(201)
-    dbIDsToDownload.delete(timestamp)
-    return
-  }
-  File.find({ _id: dbIDs[i].id }, (err, fileOrChunk) => {
+  File.findOne({ onPhones: { $ne: timestamp } }, (err, file) => {
     if (err) {
-      res.status(400).send({ error: 'no files or chunks defined by given id' })
-    } else if (fileOrChunk.length === 0) {
-      Chunk.find({ _id: dbIDs[i].id }, (err, chunk) => {
-        if (err) {
-          res.status(400).send({ error: 'could not find file or chunk by given id' })
-        }
-        if (chunk.length === 0) {
-          res.status(400).send({ error: 'no chunks defined by given id' })
-        } else {
-          fileOrChunk = chunk
-          console.log(fileOrChunk[0], ' von chunk auf file ')
-          console.log('sending chunk')
-          res.send(fileOrChunk[0])
-          dbIDs[i] = 'onPhone'
-          dbIDsToDownload.set(timestamp, dbIDs)
-          console.log(dbIDs)
-        }
-      })
-    } else {
-      console.log('sending file: ', fileOrChunk[0])
-      res.send(fileOrChunk[0])
-      dbIDs[i] = 'onPhone'
-      dbIDsToDownload.set(timestamp, dbIDs)
+      console.log(err)
+      res.status(400).send({ error: 'no file found' })
     }
+    if (!file) {
+      Chunk.findOne({ onPhones: { $ne: timestamp } }, (err, chunk) => {
+        if (err) {
+          console.log(err)
+          res.status(400).send({ error: 'no chunk found' })
+        }
+        if (!chunk) {
+          console.log('download completed')
+          res.sendStatus(201)
+          return
+        }
+        console.log('sending chunk: ', chunk)
+        res.send(chunk)
+        Chunk.updateOne({ _id: chunk.id }, { $push: { onPhones: timestamp } }).exec()
+      })
+      return
+    }
+    console.log('sending file: ', file)
+    res.send(file)
+    File.updateOne({ _id: file.id }, { $push: { onPhones: timestamp } }).exec()
   })
 })
-
-/* fetches all tasks from the database
-  response contains list of all tasks or error message
-*/
 app.get('/api/getTasks', (req, res) => {
   Task.find({}, (err, tasks) => {
     if (err) {
@@ -212,9 +140,6 @@ app.get('/api/getTasks', (req, res) => {
   })
 })
 
-/* deletes a task from the database
-  request body contains id of task to be deleted
-*/
 app.post('/api/deleteTask', (req, res) => {
   Task.deleteOne(req.body, (err) => {
     if (err) {
@@ -225,13 +150,8 @@ app.post('/api/deleteTask', (req, res) => {
   })
 })
 
-/* fetches an image from the database
-  Query: /api/getImage?id={imageID}
-  imageID is id of image to be fetched
-  response contains image or error message
-*/
 app.get('/api/getImage', (req, res) => {
-  // get query, query.id = x if url ends with ?id=x
+  // get query, q.id = x if url ends with ?id=x
   Image.findById(req.query.id, (err, image) => {
     if (err) {
       res.status(400).send({ error: 'database error' })
@@ -243,11 +163,6 @@ app.get('/api/getImage', (req, res) => {
   })
 })
 
-/* assigns labels to an image
-  request body contains image id
-  request body contains labels
-  response contains all labels of image including the ones added in this function
-*/
 app.post('/api/putLabel', (req, res) => {
   if (!req.body.label || !req.body.id) {
     res.status(400).send({ error: 'empty input parameter' })
@@ -257,7 +172,6 @@ app.post('/api/putLabel', (req, res) => {
   // parse labels
   const labelList = req.body.label.toString().split(',').map((val) => { return val.trim() })
 
-  // $push operation adds all elements of labelList array to label array in database
   Image.findByIdAndUpdate(req.body.id, { $push: { label: { $each: labelList } } }, { new: true, useFindAndModify: false }, (err, result) => {
     if (err) {
       res.status(400).send({ error: 'database error' })
@@ -271,13 +185,6 @@ app.post('/api/putLabel', (req, res) => {
   })
 })
 
-/* receives multipart data and stores image with label in database
-  request body contains:
-    - image as ByteStream
-    - labels as String
-    - takenBy (should be "user")
-    - luxValue of image
-*/
 app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
   if (!req.body.takenBy || !req.body.label) {
     res.status(400).send({ error: 'missing input parameter' })
@@ -299,8 +206,6 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
     label: labelList,
     luxValue: req.body.luxValue
   })
-
-  // delete image from temporary storage
   unlink(req.file.path, (err) => {
     if (err) {
       res.status(500).send({ error: 'temp file could not be deleted' })
@@ -310,7 +215,6 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
     }
   })
 
-  // save image to database
   img.save()
     .then((err, saved) => {
       if (err) {
@@ -343,8 +247,8 @@ app.post('/api/writeData', upload.single('sensor'), async (req, res) => {
     }
     console.log('wrote file with id: ' + file._id)
     // add the field downloads to file and chunks; add timestamp to chunk
-    File.findByIdAndUpdate(file._id, { downloads: 0 }).exec()
-    Chunk.updateMany({ files_id: file._id }, { downloads: 0, timestamp: Date.now() }).exec()
+    File.findByIdAndUpdate(file._id, { downloads: 0, onPhones: [] }).exec()
+    Chunk.updateMany({ files_id: file._id }, { downloads: 0, timestamp: Date.now(), onPhones: [] }).exec()
     unlink(req.file.path, (err) => {
       if (err) {
         res.status(500).send({ error: 'could not delete tmp file' })

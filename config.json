@@ -4,7 +4,7 @@
   "configuration": 0,
   "nodeName": 2,
   "backendIp": "192.168.0.102",
-  "backendPort": 8000,
+  "backendPort": 8001,
   "dbIp": "127.0.0.1",
   "dbPort": 27017,
   "dtndIp": "127.0.0.1",
