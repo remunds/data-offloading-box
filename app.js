@@ -76,11 +76,21 @@ async function getHighestPriorityFile (priorityOld, timestamp) {
   return toReturn
 }
 
-// Registers devices and gives every device a unique ID.
+/* /api/register registers a device prior to data download
+  response contains boxName so that device knows id of sensor box
+  the device needs this id in order to communicate with this box
+  response also contains a timestamp of the current time, this is
+  used as device id assigned to the device by the sensor box
+*/
 app.get('/api/register', async (req, res) => {
   res.send({ piId: boxName, timestamp: Date.now() })
 })
 
+/* /api/getData request body contains field "data"
+  if value of this field is old, then send oldest file on box
+  if value is new, send newest file on box
+  response contains corresponding file
+*/
 app.get('/api/getData', async (req, res) => {
   const timestamp = parseInt(req.query.deviceTimestamp)
   let fileToSend
@@ -127,6 +137,10 @@ app.get('/api/getAllData', async (req, res) => {
     File.updateOne({ _id: file.id }, { $push: { onPhones: timestamp } }).exec()
   })
 })
+
+/* deletes a task from the database
+  request body contains id of task to be deleted
+*/
 app.get('/api/getTasks', (req, res) => {
   Task.find({}, (err, tasks) => {
     if (err) {
@@ -140,6 +154,7 @@ app.get('/api/getTasks', (req, res) => {
   })
 })
 
+
 app.post('/api/deleteTask', (req, res) => {
   Task.deleteOne(req.body, (err) => {
     if (err) {
@@ -150,6 +165,11 @@ app.post('/api/deleteTask', (req, res) => {
   })
 })
 
+/* fetches an image from the database
+  Query: /api/getImage?id={imageID}
+  imageID is id of image to be fetched
+  response contains image or error message
+*/
 app.get('/api/getImage', (req, res) => {
   // get query, q.id = x if url ends with ?id=x
   Image.findById(req.query.id, (err, image) => {
@@ -163,6 +183,11 @@ app.get('/api/getImage', (req, res) => {
   })
 })
 
+/* assigns labels to an image
+  request body contains image id
+  request body contains labels
+  response contains all labels of image including the ones added in this function
+*/
 app.post('/api/putLabel', (req, res) => {
   if (!req.body.label || !req.body.id) {
     res.status(400).send({ error: 'empty input parameter' })
@@ -171,7 +196,7 @@ app.post('/api/putLabel', (req, res) => {
 
   // parse labels
   const labelList = req.body.label.toString().split(',').map((val) => { return val.trim() })
-
+  // $push operation adds all elements of labelList array to label array in database
   Image.findByIdAndUpdate(req.body.id, { $push: { label: { $each: labelList } } }, { new: true, useFindAndModify: false }, (err, result) => {
     if (err) {
       res.status(400).send({ error: 'database error' })
@@ -185,6 +210,13 @@ app.post('/api/putLabel', (req, res) => {
   })
 })
 
+/* receives multipart data and stores image with label in database
+  request body contains:
+    - image as ByteStream
+    - labels as String
+    - takenBy (should be "user")
+    - luxValue of image
+*/
 app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
   if (!req.body.takenBy || !req.body.label) {
     res.status(400).send({ error: 'missing input parameter' })
@@ -206,6 +238,7 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
     label: labelList,
     luxValue: req.body.luxValue
   })
+  // delete image from temporary storage
   unlink(req.file.path, (err) => {
     if (err) {
       res.status(500).send({ error: 'temp file could not be deleted' })
@@ -214,7 +247,7 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
       res.sendStatus(200)
     }
   })
-
+  // save image to database
   img.save()
     .then((err, saved) => {
       if (err) {
