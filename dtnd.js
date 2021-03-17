@@ -4,7 +4,7 @@ const Chunk = schemas.chunk
 const File = schemas.file
 
 const config = require('./config.json')
-let dtndUuid
+let dtndUuid = false
 
 // sleep function
 function sleep (milliseconds) {
@@ -27,8 +27,8 @@ async function registerDtnd () {
     } else {
       console.log('cannot connect to dtnd')
     }
-  }).catch((err) => {
-    console.log('cannot connect to dtnd', err)
+  }).catch(() => {
+    console.log('cannot connect to dtnd')
   })
 }
 
@@ -68,20 +68,22 @@ function fetch () {
 // deletes chunks and files that are transmitted to backend
 async function executeDeletion () {
   while (true) {
-    const collection = await fetch()
-    if (collection) {
-      for (const message of collection.messages) {
-        if (message.instruction === 'delete') {
-          if (message.type === 'chunk') {
-            Chunk.deleteOne({ _id: message.objectId }).then(
-              console.log('Chunk deleted')
-            )
-          } else if (message.type === 'file') {
-            File.deleteOne({ _id: message.objectId }).then(
-              console.log('File deleted')
-            )
-          } else {
-            console.log('wrong type format')
+    if (dtndUuid) {
+      const collection = await fetch()
+      if (collection) {
+        for (const message of collection.messages) {
+          if (message.instruction === 'delete') {
+            if (message.type === 'chunk') {
+              Chunk.deleteOne({ _id: message.objectId }).then(
+                console.log('Chunk deleted')
+              )
+            } else if (message.type === 'file') {
+              File.deleteOne({ _id: message.objectId }).then(
+                console.log('File deleted')
+              )
+            } else {
+              console.log('wrong type format')
+            }
           }
         }
       }
@@ -93,6 +95,7 @@ async function executeDeletion () {
 // init function
 function listenForDeletionInstructions () {
   console.log('listen for deletion instructions')
+
   registerDtnd()
   executeDeletion()
 }

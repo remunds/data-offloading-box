@@ -9,7 +9,7 @@ app.use(express.json())
 const port = config.backendPort
 
 // this is needed for the gridfs (the splitting of files/chunks)
-const { createReadStream, unlink, readFileSync } = require('fs')
+const { createReadStream, unlinkSync, unlink, readFileSync, writeFileSync } = require('fs')
 const { createModel } = require('mongoose-gridfs')
 const multer = require('multer')
 
@@ -187,7 +187,7 @@ app.get('/api/getImage', (req, res) => {
   request body contains labels
   response contains all labels of image including the ones added in this function
 */
-app.post('/api/putLabel', (req, res) => {
+app.post('/api/putLabel', async (req, res) => {
   if (!req.body.label || !req.body.id) {
     res.status(400).send({ error: 'empty input parameter' })
     return
@@ -195,8 +195,7 @@ app.post('/api/putLabel', (req, res) => {
 
   // parse labels
   const labelList = req.body.label.toString().split(',').map((val) => { return val.trim() })
-  // $push operation adds all elements of labelList array to label array in database
-  Image.findByIdAndUpdate(req.body.id, { $push: { label: { $each: labelList } } }, { new: true, useFindAndModify: false }, (err, result) => {
+  await Image.findByIdAndUpdate(req.body.id, { $push: { label: { $each: labelList } }, $inc: { people: 1 } }, { new: true, useFindAndModify: false }, (err, result) => {
     if (err) {
       res.status(400).send({ error: 'database error' })
       return
@@ -204,9 +203,39 @@ app.post('/api/putLabel', (req, res) => {
     if (!result) {
       res.status(400).send({ error: 'could not find image in database' })
     } else {
-      res.send(result.label)
+      res.status(200).send(result.label)
     }
   })
+
+  // check for people
+  const maxPeople = 5
+  const image = await Image.findById(req.body.id).exec()
+  if (image == null) {
+    console.log({ error: 'could not find image in database' })
+  } else {
+    if (image.people >= maxPeople) {
+      writeFileSync('./uploads/' + req.body.id + '.json', JSON.stringify(image), 'utf8', (err) => {
+        console.log(err)
+      })
+      const fs = createModel({
+        modelName: 'fs'
+      })
+      const readStream = createReadStream('./uploads/' + req.body.id + '.json')
+      const options = ({ filename: req.body.id, contentType: 'image/jpeg' })
+      await fs.write(options, readStream, async (error, file) => {
+        if (error) {
+          console.log('could not chunk file')
+        } else {
+          console.log('wrote file with id: ' + file._id)
+          // add the field downloads to file and chunks; add timestamp to chunk
+          File.findByIdAndUpdate(file._id, { downloads: 0 }).exec()
+          Chunk.updateMany({ files_id: file._id }, { downloads: 0, timestamp: Date.now() }).exec()
+          Image.deleteOne({ _id: req.body.id }).exec()
+          unlinkSync('./uploads/' + req.body.id + '.json')
+        }
+      })
+    }
+  }
 })
 
 /* receives multipart data and stores image with label in database
@@ -217,46 +246,33 @@ app.post('/api/putLabel', (req, res) => {
     - luxValue of image
 */
 app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
-  if (!req.body.takenBy || !req.body.label) {
-    res.status(400).send({ error: 'missing input parameter' })
-    return
-  }
-
   if (!req.file) {
     res.status(400).send({ error: 'missing file' })
     return
   }
 
-  // parse labels
-  const labelList = req.body.label.toString().split(',').map((val) => { return val.trim() })
+  if (!req.body.takenBy || !req.body.label) {
+    res.status(400).send({ error: 'missing input parameter' })
+  } else {
+    // parse labels
+    const labelList = req.body.label.toString().split(',').map((val) => { return val.trim() })
 
-  const img = new Image({
-    type: 'image/jpeg',
-    data: Buffer.from(readFileSync(req.file.path), 'base64'),
-    takenBy: req.body.takenBy,
-    label: labelList,
-    luxValue: req.body.luxValue
-  })
-  // delete image from temporary storage
-  unlink(req.file.path, (err) => {
-    if (err) {
-      res.status(500).send({ error: 'temp file could not be deleted' })
-    } else {
-      console.log('user image saved to db')
-      res.sendStatus(200)
-    }
-  })
-  // save image to database
-  img.save()
-    .then((err, saved) => {
-      if (err) {
-        res.sendStatus(500)
-        res.send({ error: 'image could not be saved to database' })
-      } else {
-        console.log('user image saved to db')
-        res.sendStatus(200)
-      }
+    const img = new Image({
+      type: 'image/jpeg',
+      data: Buffer.from(readFileSync(req.file.path), 'base64'),
+      takenBy: req.body.takenBy,
+      label: labelList,
+      luxValue: req.body.luxValue,
+      people: 0
     })
+
+    // save image to database
+    img.save().catch(() => {
+      res.status(500).send({ error: 'image could not be saved to database' })
+    })
+  }
+  unlinkSync(req.file.path)
+  res.status(200).send()
 })
 
 // chunks Data and writes it to DB
@@ -270,14 +286,12 @@ app.post('/api/writeData', upload.single('sensor'), async (req, res) => {
   })
 
   // write file to db
-  console.log(req.sensor != null)
   const readStream = createReadStream(req.file.path)
   const options = ({ filename: req.file.originalname, contentType: req.file.mimetype })
   await fs.write(options, readStream, async (error, file) => {
     if (error) {
       res.status(500).send({ error: 'could not chunk file' })
     }
-    console.log('wrote file with id: ' + file._id)
     // add the field downloads to file and chunks; add timestamp to chunk
     File.findByIdAndUpdate(file._id, { downloads: 0, onPhones: [] }).exec()
     Chunk.updateMany({ files_id: file._id }, { downloads: 0, timestamp: Date.now(), onPhones: [] }).exec()

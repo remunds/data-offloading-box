@@ -20,7 +20,9 @@ const imageSchema = new mongoose.Schema({
   // assigned labels for this image
   label: [],
   // light value of image
-  luxValue: Number
+  luxValue: Number,
+  // people that have labelled the image
+  people: Number
 })
 
 // creates chunkSchema

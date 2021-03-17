@@ -222,6 +222,19 @@ describe('/api/saveUserImage test', function () {
   })
 })
 
+describe('writeData', () => {
+  it('write Data', (done) => {
+    server
+      .post('/api/writeData')
+      .attach('sensor', 'test/Mobile_Data_Offloading_QS.pdf')
+      .end((err, res) => {
+        should.not.exist(err)
+        res.status.should.equal(200)
+        done()
+      })
+  })
+})
+
 describe('/getTasks test', function () {
   it('get all tasks on sensorbox', function (done) {
     server
