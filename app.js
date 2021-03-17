@@ -269,24 +269,36 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
     luxValue: req.body.luxValue,
     people: 0
   })
-  // delete image from temporary storage
-  unlink(req.file.path, (err) => {
-    if (err) {
-      res.status(500).send({ error: 'temp file could not be deleted' })
-    } else {
-      console.log('user image saved to db')
-    }
-  })
   // save image to database
   img.save()
     .then((err, saved) => {
       if (err) {
-        res.status(500).send({ error: 'image could not be saved to database' })
+        status = 500
       } else {
+        status = 200
         console.log('user image saved to db')
-        res.sendStatus(200)
       }
     })
+
+  unlink(req.file.path, (err) => {
+    if (err) {
+      if (status === 500) {
+        res.status(500).send({ error: 'image could not be saved to database and temp file could not be deleted' })
+      } else if (status === 200) {
+        res.status(200).send({ error: 'temp file could not be deleted' })
+      } else {
+        res.status(500).send({ error: 'somthing went wrong' })
+      }
+    } else {
+      if (status === 500) {
+        res.status(500).send({ error: 'image could not be saved to database' })
+      } else if (status === 200) {
+        res.status(200).send({ error: '' })
+      } else {
+        res.status(500).send({ error: 'something went wrong' })
+      }
+    }
+  })
 })
 
 // chunks Data and writes it to DB
