@@ -7,7 +7,7 @@ Type=simple
 Environment=NODE_PORT=8000
 Restart=on-failure
 RestartSec=3
-ExecStart=/usr/bin/node /home/pi/data-offloading-backend/app.js
+ExecStart=/usr/bin/node /home/pi/data-offloading-box/app.js
 
 [Install]
 WantedBy=multi-user.target
