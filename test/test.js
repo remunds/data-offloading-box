@@ -90,6 +90,40 @@ describe('/putLabel test', function () {
       })
   })
 
+  it('should chunk, transfer and delete image', function (done) {
+    var n = 0
+    Image.countDocuments({}, function(err, c) { n = c })
+    server
+      .post('/api/putLabel')
+      .send({ id: imageID, label: "test1" })
+      .expect(200)
+      .end(function (err, res) {
+        // response body contains all image labels
+        should(res.body.pop()).equal("test1")
+      })
+      server
+      .post('/api/putLabel')
+      .send({ id: imageID, label: "test2" })
+      .expect(200)
+      .end(function (err, res) {
+        // response body contains all image labels
+        should(res.body.pop()).equal("test2")
+      })
+      server
+      .post('/api/putLabel')
+      .send({ id: imageID, label: "test3" })
+      .expect(200)
+      .end(function (err, res) {
+        // response body contains all image labels
+        should(res.body.pop()).equal("test3")
+      })
+      Image.countDocuments({}, function(err, c) {
+        // one more image in database than before api call
+        c.should.equal(n-1)
+      });
+      done()
+  })
+
   it('no id should throw error', function (done) {
     server
       .post('/api/putLabel')
@@ -222,6 +256,34 @@ describe('/api/saveUserImage test', function () {
   })
 })
 
+<<<<<<< HEAD
+=======
+describe('writeData', () => {
+  it('write Data', (done) => {
+    server
+      .post('/api/writeData')
+      .attach('sensor', 'test/Mobile_Data_Offloading_QS.pdf')
+      .end((err, res) => {
+        should.not.exist(err)
+        res.status.should.equal(200)
+        done()
+      })
+  })
+})
+
+describe('/registerCurrentData test', function () {
+  it('should register all ids from device to a map of arrays where key is a unique device id and value an array of its ids', function (done) {
+    server
+      .post('/api/registerCurrentData')
+      .send({ timestamp: '00000000', idList: [] })
+      .end(function (err, res) {
+        res.status.should.equal(201)
+        done()
+      })
+  })
+})
+
+>>>>>>> 579394b (fix gridfs)
 describe('/getTasks test', function () {
   it('get all tasks on sensorbox', function (done) {
     server
