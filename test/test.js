@@ -275,3 +275,12 @@ describe('/register test', function () {
     })
   })
 })
+
+describe('/getData test', function () {
+  it('getData', function (done) {
+    server.get('/api/getData').expect(200).end(async function (err, res) {
+      should.exist(err)
+    done()
+    })
+  })
+})
