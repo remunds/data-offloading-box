@@ -266,3 +266,12 @@ describe('/deleteTasks test', function () {
       })
   })
 })
+
+describe('/register test', function () {
+  it('register', function (done) {
+    server.get('/api/register').expect(200).end(async function (err, res) {
+      should.not.exist(err)
+    done()
+    })
+  })
+})
