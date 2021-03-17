@@ -33,6 +33,8 @@ const chunkSchema = new mongoose.Schema({
   files_id: mongoose.ObjectId,
   // number of chunk regarding the file it belongs to
   n: Number,
+  // id's of phones that collected this file
+  onPhones: [],
   // actual data to be transmitted
   data: [Buffer]
 })
@@ -47,6 +49,8 @@ const fileSchema = new mongoose.Schema({
   chunkSize: Number,
   // date of file upload
   uploadDate: Number,
+  // id's of phones that collected this file
+  onPhones: [],
   // hash
   md5: String,
   filename: String,
