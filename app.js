@@ -154,7 +154,6 @@ app.get('/api/getTasks', (req, res) => {
   })
 })
 
-
 app.post('/api/deleteTask', (req, res) => {
   Task.deleteOne(req.body, (err) => {
     if (err) {
