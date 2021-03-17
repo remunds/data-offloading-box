@@ -6,7 +6,7 @@ const boxName = config.nodeName
 const express = require('express')
 const app = express()
 app.use(express.json())
-const port = config.port
+const port = config.backendPort
 
 // this is needed for the gridfs (the splitting of files/chunks)
 const { createReadStream, unlinkSync, unlink, readFileSync, writeFileSync } = require('fs')
