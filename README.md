@@ -49,7 +49,16 @@ sudo ./start.sh
 ```
 
 3. Now the box server should run in background and should start itself automatically after a restart or a crash.
-
+4. You need to change the SSID to "Sonsorbox" via the Web Gui.
+```
+IP address: 
+   WiFi: 10.3.141.1
+   Network: local IP
+Username: admin
+Password: secret
+```
+5. Lastly you must remove the Passoword via the Web Gui
+Then you have to restart the Pi.
 The Pi will be not longer reachable over WiFi after restart, because [RaspAP](https://github.com/RaspAP/raspap-webgui) is creating a WiFi hotspot. To maintain the Pi you can still connect over WiFi to SSH. 
 
 #### For debugging purposes, you can run
