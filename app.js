@@ -26,11 +26,7 @@ const File = schemas.file
 // returns: File or Chunk with the highest priority, or
 // if not existing: -1
 // input: bool priorityOld: true: sort by oldest date first, false: sort by newest date first
-<<<<<<< HEAD
 async function getHighestPriorityFile (priorityOld, timestamp) {
-=======
-async function getHighestPriorityFile(priorityOld) {
->>>>>>> 579394b (fix gridfs)
   let highestPriority
   // find oldest and least downloaded chunk + file
   const sortBy = priorityOld ? 1 : -1
@@ -191,7 +187,8 @@ app.get('/api/getImage', (req, res) => {
   request body contains labels
   response contains all labels of image including the ones added in this function
 */
-app.post('/api/putLabel', (req, res) => {
+app.post('/api/putLabel', async (req, res) => {
+  // console.log(req.body)
   if (!req.body.label || !req.body.id) {
     res.status(400).send({ error: 'empty input parameter' })
     return
@@ -199,8 +196,7 @@ app.post('/api/putLabel', (req, res) => {
 
   // parse labels
   const labelList = req.body.label.toString().split(',').map((val) => { return val.trim() })
-  // $push operation adds all elements of labelList array to label array in database
-  Image.findByIdAndUpdate(req.body.id, { $push: { label: { $each: labelList } }, $inc: { people: 1 } }, { new: true, useFindAndModify: false }, (err, result) => {
+  await Image.findByIdAndUpdate(req.body.id, { $push: { label: { $each: labelList } }, $inc: { people: 1 } }, { new: true, useFindAndModify: false }, (err, result) => {
     if (err) {
       res.status(400).send({ error: 'database error' })
       return
@@ -208,40 +204,38 @@ app.post('/api/putLabel', (req, res) => {
     if (!result) {
       res.status(400).send({ error: 'could not find image in database' })
     } else {
-      res.send(result.label)
+      res.status(200).send(result.label)
     }
   })
-
+  
   // check for people
   const maxPeople = 5
-  var image = Image.findById(req.body.id, (err) => {
-    console.log({ error: 'database error' })
-    return
-  })
+  var image = await Image.findById(req.body.id).exec()
   if (image == null) {
     console.log({ error: 'could not find image in database' })
   } else {
-    console.log("hello0")
+    // console.log("hello0")
+    // console.log(image.people)
     if (image.people >= maxPeople) {
-      console.log(JSON.stringify(image))
-      console.log("hello1")
+      // console.log(JSON.stringify(image))
+      // console.log("hello1")
       writeFileSync('./uploads/' + req.body.id + '.json', JSON.stringify(image), 'utf8', (err) => {
         console.log(err);
-      })
-      console.log("hello2")
+      }) 
+      // console.log("hello2")
       const fs = createModel({
         modelName: 'fs'
       })
 
       // write file to db
-      console.log(image.data)
+      // console.log(image.data)
 
       const readStream = createReadStream('./uploads/' + req.body.id + '.json')
-      console.log(readStream)
+      // console.log(readStream)
       const options = ({ filename: req.body.id, contentType: 'image/jpeg' })
-      console.log("hello3")
-      fs.write(options, readStream, async (error, file) => {
-        console.log("hello4")
+      // console.log("hello3")
+      await fs.write(options, readStream, async (error, file) => {
+        // console.log("hello4")
         if (error) {
           console.log({ error: 'could not chunk file' })
         } else {
@@ -249,14 +243,8 @@ app.post('/api/putLabel', (req, res) => {
           // add the field downloads to file and chunks; add timestamp to chunk
           File.findByIdAndUpdate(file._id, { downloads: 0 }).exec()
           Chunk.updateMany({ files_id: file._id }, { downloads: 0, timestamp: Date.now() }).exec()
-          Image.deleteOne({ id: req.body.id })
-          unlink(req.body.id, (err) => {
-            if (err) {
-              res.status(500).send({ error: 'could not delete tmp file' })
-            } else {
-              res.status(200).send({ error: '' })
-            }
-          })
+          Image.deleteOne({_id: req.body.id }).exec()
+          unlinkSync('./uploads/' + req.body.id + '.json')
         }
       })
     }

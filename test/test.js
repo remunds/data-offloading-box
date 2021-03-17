@@ -90,40 +90,6 @@ describe('/putLabel test', function () {
       })
   })
 
-  it('should chunk, transfer and delete image', function (done) {
-    var n = 0
-    Image.countDocuments({}, function(err, c) { n = c })
-    server
-      .post('/api/putLabel')
-      .send({ id: imageID, label: "test1" })
-      .expect(200)
-      .end(function (err, res) {
-        // response body contains all image labels
-        should(res.body.pop()).equal("test1")
-      })
-      server
-      .post('/api/putLabel')
-      .send({ id: imageID, label: "test2" })
-      .expect(200)
-      .end(function (err, res) {
-        // response body contains all image labels
-        should(res.body.pop()).equal("test2")
-      })
-      server
-      .post('/api/putLabel')
-      .send({ id: imageID, label: "test3" })
-      .expect(200)
-      .end(function (err, res) {
-        // response body contains all image labels
-        should(res.body.pop()).equal("test3")
-      })
-      Image.countDocuments({}, function(err, c) {
-        // one more image in database than before api call
-        c.should.equal(n-1)
-      });
-      done()
-  })
-
   it('no id should throw error', function (done) {
     server
       .post('/api/putLabel')
