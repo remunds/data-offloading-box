@@ -9,7 +9,7 @@ app.use(express.json())
 const port = config.port
 
 // this is needed for the gridfs (the splitting of files/chunks)
-const { createReadStream, unlinkSync, unlink, readFileSync, writeFile, writeFileSync } = require('fs')
+const { createReadStream, unlinkSync, unlink, readFileSync, writeFileSync } = require('fs')
 const { createModel } = require('mongoose-gridfs')
 const multer = require('multer')
 
@@ -188,7 +188,6 @@ app.get('/api/getImage', (req, res) => {
   response contains all labels of image including the ones added in this function
 */
 app.post('/api/putLabel', async (req, res) => {
-  // console.log(req.body)
   if (!req.body.label || !req.body.id) {
     res.status(400).send({ error: 'empty input parameter' })
     return
@@ -207,43 +206,31 @@ app.post('/api/putLabel', async (req, res) => {
       res.status(200).send(result.label)
     }
   })
-  
+
   // check for people
   const maxPeople = 5
-  var image = await Image.findById(req.body.id).exec()
+  const image = await Image.findById(req.body.id).exec()
   if (image == null) {
     console.log({ error: 'could not find image in database' })
   } else {
-    // console.log("hello0")
-    // console.log(image.people)
     if (image.people >= maxPeople) {
-      // console.log(JSON.stringify(image))
-      // console.log("hello1")
       writeFileSync('./uploads/' + req.body.id + '.json', JSON.stringify(image), 'utf8', (err) => {
-        console.log(err);
-      }) 
-      // console.log("hello2")
+        console.log(err)
+      })
       const fs = createModel({
         modelName: 'fs'
       })
-
-      // write file to db
-      // console.log(image.data)
-
       const readStream = createReadStream('./uploads/' + req.body.id + '.json')
-      // console.log(readStream)
       const options = ({ filename: req.body.id, contentType: 'image/jpeg' })
-      // console.log("hello3")
       await fs.write(options, readStream, async (error, file) => {
-        // console.log("hello4")
         if (error) {
-          console.log({ error: 'could not chunk file' })
+          console.log('could not chunk file')
         } else {
           console.log('wrote file with id: ' + file._id)
           // add the field downloads to file and chunks; add timestamp to chunk
           File.findByIdAndUpdate(file._id, { downloads: 0 }).exec()
           Chunk.updateMany({ files_id: file._id }, { downloads: 0, timestamp: Date.now() }).exec()
-          Image.deleteOne({_id: req.body.id }).exec()
+          Image.deleteOne({ _id: req.body.id }).exec()
           unlinkSync('./uploads/' + req.body.id + '.json')
         }
       })
@@ -267,7 +254,6 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
   if (!req.body.takenBy || !req.body.label) {
     res.status(400).send({ error: 'missing input parameter' })
   } else {
-
     // parse labels
     const labelList = req.body.label.toString().split(',').map((val) => { return val.trim() })
 
@@ -280,11 +266,9 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
       people: 0
     })
 
-
     // save image to database
-    img.save().catch((err) => {
+    img.save().catch(() => {
       res.status(500).send({ error: 'image could not be saved to database' })
-      return
     })
   }
   unlinkSync(req.file.path)
@@ -302,15 +286,12 @@ app.post('/api/writeData', upload.single('sensor'), async (req, res) => {
   })
 
   // write file to db
-  console.log(req.sensor != null)
   const readStream = createReadStream(req.file.path)
-  console.log(readStream)
   const options = ({ filename: req.file.originalname, contentType: req.file.mimetype })
   await fs.write(options, readStream, async (error, file) => {
     if (error) {
       res.status(500).send({ error: 'could not chunk file' })
     }
-    console.log('wrote file with id: ' + file._id)
     // add the field downloads to file and chunks; add timestamp to chunk
     File.findByIdAndUpdate(file._id, { downloads: 0, onPhones: [] }).exec()
     Chunk.updateMany({ files_id: file._id }, { downloads: 0, timestamp: Date.now(), onPhones: [] }).exec()

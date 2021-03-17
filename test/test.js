@@ -222,8 +222,6 @@ describe('/api/saveUserImage test', function () {
   })
 })
 
-<<<<<<< HEAD
-=======
 describe('writeData', () => {
   it('write Data', (done) => {
     server
@@ -237,19 +235,6 @@ describe('writeData', () => {
   })
 })
 
-describe('/registerCurrentData test', function () {
-  it('should register all ids from device to a map of arrays where key is a unique device id and value an array of its ids', function (done) {
-    server
-      .post('/api/registerCurrentData')
-      .send({ timestamp: '00000000', idList: [] })
-      .end(function (err, res) {
-        res.status.should.equal(201)
-        done()
-      })
-  })
-})
-
->>>>>>> 579394b (fix gridfs)
 describe('/getTasks test', function () {
   it('get all tasks on sensorbox', function (done) {
     server
