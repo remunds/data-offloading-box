@@ -219,4 +219,4 @@ https://github.com/dtn7/dtn7-go
 
 # License
 
-This project's code is licensed under the [GNU General Public License version 3 (GPL-3.0-or-later)](https://github.com/remunds/data-offloading-box/LICENSE). .
+This project's code is licensed under the [GNU General Public License version 3 (GPL-3.0-or-later)](https://github.com/remunds/data-offloading-box/blob/main/LICENSE).
