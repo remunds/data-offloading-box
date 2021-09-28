@@ -5,7 +5,10 @@ const boxName = config.nodeName
 // express server
 const express = require('express')
 const app = express()
+var cors = require('cors')
+app.use(cors())
 app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 const port = config.backendPort
 
 // this is needed for the gridfs (the splitting of files/chunks)
@@ -26,7 +29,7 @@ const File = schemas.file
 // returns: File or Chunk with the highest priority, or
 // if not existing: -1
 // input: bool priorityOld: true: sort by oldest date first, false: sort by newest date first
-async function getHighestPriorityFile (priorityOld, timestamp) {
+async function getHighestPriorityFile(priorityOld, timestamp) {
   let highestPriority
   // find oldest and least downloaded chunk + file
   const sortBy = priorityOld ? 1 : -1
@@ -138,11 +141,49 @@ app.get('/api/getAllData', async (req, res) => {
   })
 })
 
-/* deletes a task from the database
-  request body contains id of task to be deleted
-*/
+app.get('/api/listFiles', (req, res) => {
+  File.find({}, '_id filename', (err, files) => {
+    if(err){
+      console.log(err)
+      res.status(400).send({ error: 'Query Error' })
+    }
+    else{
+      if(files == null){
+        res.status(400).send('no files in db')
+      }
+      else{
+        res.send(files)
+      }
+    }
+  })
+})
+
+app.get('/api/listChunks', (req, res) => {
+  Chunk.find({}, '_id files_id', (err, chunks) => {
+    if(err){
+      console.log(err)
+      res.status(400).send({ error: 'Query Error' })
+    }
+    else{
+      if(chunks == null){
+        res.status(400).send('no files in db')
+      }
+      else{
+        res.send(chunks)
+      }
+    }
+  })
+})
+
+
+
+
+
+
 app.get('/api/getTasks', (req, res) => {
   Task.find({}, (err, tasks) => {
+    //Allows Cross Origin Resource Sharing for Web App
+    //res.set('Access-Control-Allow-Origin', '*')
     if (err) {
       res.status(400).send({ error: 'database not available' })
     }
@@ -154,12 +195,103 @@ app.get('/api/getTasks', (req, res) => {
   })
 })
 
+app.post('/api/addTask', (req, res) => {
+  console.log("Adding Task")
+  console.log(req.body)
+  if (req.body.type == 1) {
+    console.log("I'm Here")
+    Image.find({}, (err, images) => {
+      console.log("lol")
+      if (err) console.log("ERROR: " + err)
+      else if (images != null) {
+        if(!images.length){
+          console.log("Collection empty")
+          res.status(500).send("Collection Empty")
+        }
+        // create new Task for every found image
+        let i = 0
+        images.forEach(image => {
+          let imageTask
+          // distinguish between tasks for labelling Box images and user images
+          if (image.takenBy === 'user') {
+            imageTask = new Task({ title: 'Nutzerbild beschriften', description: 'Bitte wähle das passende Label aus.', imageId: image.id })
+          } else {
+            imageTask = new Task({ title: 'Fotofallen-Bild beschriften', description: 'Bitte wähle das passende Label aus.', imageId: image.id })
+          }
+
+          // check if task already exists in DB
+          Task.findOne({ imageId: imageTask.imageId }, (err, doc) => {
+            if (err) return console.error(err)
+            // if there is no task with the given imageId, save it.
+            if (doc == null && i == 0) {
+              imageTask.save()
+              console.log('saved imageTask with imageID: ' + image.id)
+              i = i + 1
+              res.status(200).send("Saved Task")
+            }
+            else {
+              console.log('Task already exists or limit of adding 1 task exceeded')
+              res.send(400)
+            }
+          })
+        })
+        
+      }
+      else {
+        console.log("Something Bad happened")
+        res.send(400)
+      }
+    })
+  }
+  else if (req.body.type == 3) {
+    const PhotoTask = new Task({ title: 'Box säubern', description: 'Bitte entferne Äste und Schmutz von der Oberfläche der Sensorbox.' })
+    PhotoTask.save((err) => {
+      if (err) {
+        console.error(err)
+        res.status(400).send(err)
+
+      }
+      else {
+        console.log("Added Photo Task")
+        res.sendStatus(200)
+      }
+    })
+  }
+  else if (req.body.type == 2) {
+    const CleanTask = new Task({ title: 'Baumkronen Foto', description: 'Bitte nehme ein Foto der Baumkrone auf.' })
+    CleanTask.save((err) => {
+      if (err) {
+        console.error(err)
+        res.status(400).send(err)
+
+      }
+      else {
+        console.log("Added Cleaning Task")
+        res.sendStatus(200)
+      }
+    })
+  }
+  else {
+
+    console.log("Wrong format")
+    res.status(400).send({ error: 'database error or wrong format, format was:' + req.body })
+  }
+  console.log("End")
+})
+
+/* deletes a task from the database
+  request body contains id of task to be deleted
+*/
 app.post('/api/deleteTask', (req, res) => {
+  console.log(req.body)
+
+  console.log("ID is: " + req.body)
   Task.deleteOne(req.body, (err) => {
     if (err) {
       res.status(400).send({ error: 'could not delete task' })
     } else {
       res.sendStatus(200)
+      console.log("deleted Task")
     }
   })
 })
@@ -245,7 +377,7 @@ app.post('/api/putLabel', async (req, res) => {
     - takenBy (should be "user")
     - luxValue of image
 */
-app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
+app.post('/api/saveUserImage', upload.single('data'), async (req, res) => {
   if (!req.file) {
     res.status(400).send({ error: 'missing file' })
     return
@@ -266,10 +398,30 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
       people: 0
     })
 
-    // save image to database
-    img.save().catch(() => {
-      res.status(500).send({ error: 'image could not be saved to database' })
+    //this part is for demonstration purposes only, remove when using normally
+    const fs = createModel({
+      modelName: 'fs'
     })
+    const readStream = createReadStream(req.file.path)
+    const options = ({filename: Date.now().toString() + ".jpeg", contentType: 'image/jpeg'})
+    await fs.write(options, readStream, async (error, file) => {
+      if(error){
+        console.log("could not chunk file")
+        res.status(500).send({ error: 'image could not be saved to database' })
+      }
+      else
+        console.log('wrote file with id:' + file._id)
+        File.findByIdAndUpdate(file._id, { downloads: 0 }).exec()
+        Chunk.updateMany({ files_id: file._id }, { downloads: 0, timestamp: Date.now() }).exec()
+    })
+    //End of Demo Part
+
+    //de-comment this part when using normal mode
+  
+    // // save image to database
+    // img.save().catch(() => {
+    //   res.status(500).send({ error: 'image could not be saved to database' })
+    // })
   }
   unlinkSync(req.file.path)
   res.status(200).send()
@@ -281,6 +433,8 @@ app.post('/api/saveUserImage', upload.single('data'), (req, res) => {
 // Body: contains file as form-data type: 'file' and name: 'sensor'
 app.post('/api/writeData', upload.single('sensor'), async (req, res) => {
   // create model so that our collections are called fs.files and fs.chunks
+  console.log("WRITING DATA")
+  console.log(req)
   const fs = createModel({
     modelName: 'fs'
   })
@@ -305,6 +459,25 @@ app.post('/api/writeData', upload.single('sensor'), async (req, res) => {
   })
 })
 
+app.get('/api/getTemperaturePlot', async (req, res) => {
+  let currentDate = new Date().toISOString().slice(0, 10)
+  console.log("Date: ", currentDate)
+  res.sendFile('/home/pi/sensor_data/cpu_temperature_' + currentDate +'_12-54.png')
+})
+
+app.get('/api/getAllImages', async (req, res) => {
+  Image.find({"takenBy": "user"}, (err, images) => {
+    if (err) {
+      console.log(err)
+      res.status(400).send({error: 'DB Error occured'})
+    }
+    else {
+      console.log("Images length:" + images.length)
+      res.send(images)
+    }
+  })
+})
+
 const server = app.listen(port, () => {
   console.log(`listening at http://localhost:${port}`)
 })
@@ -319,8 +492,14 @@ db.once('open', () => {
   // we're connected!
   console.log('connected to db')
 
-  const generator = require('./taskgenerator')
-  generator.apply()
+  //TASK GENERATOR DISABLED FOR DEMO PURPOSES
+  //const generator = require('./taskgenerator')
+  //generator.apply()
+
+  //DUE TO DEMO PURPOSES DB MANAGER HANDLES DATA MANAGEMENT HOURLY
+  const dbManager = require('./dbManager.js')
+  //dbManager.saveSensorImage()
+  //dbManager.deleteDataHourly()
 
   const dtnd = require('./dtnd.js')
   dtnd.apply()
