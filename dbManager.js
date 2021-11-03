@@ -28,20 +28,16 @@ async function deleteDataHourly(){
 }
 
 async function saveSensorImage() {
-    // if(i == 0){
-    //     console.log("Saving a Plot hourly")
-    //     i++
-    // }
-    console.log("Saving a Plot hourly")
+    if(i == 0){
+        console.log("Saving a Plot hourly")
+        i++
+    }
+    //console.log("Saving a Plot hourly")
     var date = new Date()
     setTimeout(async function () {
         var mins = date.getMinutes()
-        var hour = date.getHours()
-        var minsString = date.getMinutes().toString()
-        var hourString = date.getHours().toString()
-        if(mins < 10){
-            minsString = "0" + minsString
-        }
+        var hour = date.getHours() - 1
+        var hourString = hour.toString()
         if(hour < 10){
             hourString = "0" + hourString
         }
@@ -53,7 +49,7 @@ async function saveSensorImage() {
             })
             let filepath = "/home/pi/sensor_data/cpu_temperature_"+ currentDate +"_"+ hourString +"-54.png"
             const readStream = createReadStream(filepath)
-            const options = ({ filename: "lol.png", contentType: 'image/png' })
+            const options = ({ filename: "cpu_temperature_"+ currentDate +"_"+ hourString +"-54.png", contentType: 'image/png' })
             await fs.write(options, readStream, async (err, file) => {
                 if (err) {
                     console.error("Temp Plot could not be chunked")

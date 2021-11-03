@@ -38,14 +38,14 @@ const chunkSchema = new mongoose.Schema({
   // id's of phones that collected this file
   onPhones: [],
   // actual data to be transmitted
-  data: [Buffer]
+  data: Buffer
 })
 
 // creates fileSchema
 const fileSchema = new mongoose.Schema({
   // amount of times a file has been downloaded already
   downloads: Number,
-  // number of chunks
+  // total file size
   length: Number,
   // size of a single chunk
   chunkSize: Number,

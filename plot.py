@@ -1,8 +1,8 @@
 from matplotlib import pyplot as plt
-
 from gpiozero import CPUTemperature
 from datetime import datetime
 import time
+import os
 
 cpu = CPUTemperature()
 hour = datetime.now().hour
@@ -11,6 +11,7 @@ y = []
 while True:
     date = datetime.today().strftime('%Y-%m-%d')
     time_now = datetime.now().strftime('%H-%M')
+    
     if(datetime.now().minute % 6 == 0):
         print(cpu.temperature)
         print(datetime.now().minute)
@@ -30,4 +31,12 @@ while True:
         hour = datetime.now().hour
         x.clear
         y.clear
+        lasthour = hour
+        lasthour = "0" + str(lasthour) if lasthour < 10 else str(lasthour)
+        if(os.path.exists('/home/pi/sensor_data/cpu_temperature_' + date + '_' + lasthour  +  '-54.png')):
+            print("Trying to delete /home/pi/sensor_data/cpu_temperature_"+ date + '_' + lasthour  +  '-54.png')
+            os.remove('/home/pi/sensor_data/cpu_temperature_' + date + '_' + lasthour  +  '-54.png')
+        else:
+            print("File does not exist")
+        
         
