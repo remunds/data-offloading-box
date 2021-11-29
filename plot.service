@@ -1,0 +1,13 @@
+[Unit]
+Description=mobile data offloading test data generator
+After=network.target
+
+[Service]
+Type=simple
+Restart=on-failure
+RestartSec=3
+User=root
+ExecStart=/usr/bin/python3 /home/pi/data-offloading-box/plot.py
+
+[Install]
+WantedBy=multi-user.target

@@ -8,6 +8,7 @@ cpu = CPUTemperature()
 hour = datetime.now().hour
 x = []
 y = []
+print("Script for temperature plot generation started")
 while True:
     date = datetime.today().strftime('%Y-%m-%d')
     time_now = datetime.now().strftime('%H-%M')
